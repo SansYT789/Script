@@ -1,19 +1,19 @@
 --// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
---// Tạo main window
+--// Tạo main window với theme Dark
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
     Size = UDim2.new(0, 350, 0, 250),
-    Theme = "Mango",
-    Icon = "Home"
+    Theme = "Dark",
+    Icon = "AirPlay"   -- 🔹 icon đầu window
 })
 
---// Thêm tab trống
+--// Thêm tab Main với icon House
 local MainTab = Window:Tab({
     Title = "Main",
-    Icon = "Home",    -- 🔹 Icon tab đổi thành Home
+    Icon = "House",    -- 🔹 icon tab Main
     Locked = false
 })
