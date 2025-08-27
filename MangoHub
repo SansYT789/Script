@@ -33,7 +33,7 @@ local MainTab = MainSection:Tab({
 
 local AutoTab = MainSection:Tab({ 
     Title = "Automatic", 
-    Icon = "click", 
+    Icon = "", 
     Desc = "Prevent getting kicked for AFK" 
 })
 
