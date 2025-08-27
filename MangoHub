@@ -8,12 +8,12 @@ local Window = WindUI:CreateWindow({
     Folder = "Mango",
     Size = UDim2.new(0, 350, 0, 250),
     Theme = "Dark",
-    Icon = "AirPlay"
+    Icon = "airplay"
 })
 
 --// Thêm tab Main với icon House
 local MainTab = Window:Tab({
     Title = "Main",
-    Icon = "House",
+    Icon = "house",
     Locked = false
 })
