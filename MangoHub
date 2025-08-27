@@ -1,5 +1,4 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/Example.lua"))()
--- Note: the docs refer to WindUI up to v1.6.41, so adjust accordingly
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
@@ -22,49 +21,44 @@ local OtherTab = Window:Tab({
     Locked = false
 })
 
--- Main tab
-MainTab:Label({ Title = "Version: 1.0 [ Demo ]" })
-MainTab:Label({ Title = "Discord: https://discord.com/krnl" })
+-- Main tab content
+local VersionLabel = MainTab:Label({
+    Title = "Version: 1.0 [ Demo ]"
+})
 
-local AntiAFK_Toggle = MainTab:Toggle({
-    Title = "Anti AFK",
-    Desc = "Toggle anti-idle protection",
-    Default = false,
-    Callback = function(val)
-        if val then
-            local vu = game:GetService("VirtualUser")
-            game:GetService("Players").LocalPlayer.Idled:Connect(function()
-                vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-                task.wait(1)
-                vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-            end)
-            print("Anti AFK Enabled")
-        else
-            print("Anti AFK Disabled")
-            -- Note: can't easily disconnect, but flipping off means ignore
-        end
+local DiscordLabel = MainTab:Label({
+    Title = "Discord: https://discord.com/krnl"
+})
+
+local AntiAFK = MainTab:Button({
+    Title = "Anti afk",
+    Desc = "Prevents idle kick",
+    Locked = false,
+    Callback = function()
+        local vu = game:GetService("VirtualUser")
+        game:GetService("Players").LocalPlayer.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        end)
+        print("Anti AFK Enabled")
     end
 })
 
--- Other tab
-OtherTab:Dropdown({
+-- Other tab content
+local ESPLabel
+local ESPDropdown = OtherTab:Dropdown({
     Title = "ESP",
-    Desc = "Expand to access",
+    Desc = "Options for ESP",
     Values = {"Soon"},
     Multi = false,
     Callback = function(value)
-        Window:Notification({
-            Title = "ESP",
-            Text = "Feature coming soon!",
-            Duration = 3
-        })
-    end
-})
-
-OtherTab:Input({
-    Title = "Custom Command",
-    Placeholder = "Type command here...",
-    Callback = function(text)
-        print("Input typed:", text)
+        if ESPLabel then
+            ESPLabel:SetText(value)
+        else
+            ESPLabel = OtherTab:Label({
+                Title = value
+            })
+        end
     end
 })
