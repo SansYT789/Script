@@ -21,6 +21,7 @@ local OtherTab = Window:Tab({
     Locked = false
 })
 
+-- MainTab content
 local VersionLabel = MainTab:Label({
     Title = "Version: 1.0 [ Demo ]"
 })
@@ -44,8 +45,8 @@ local AntiAFK = MainTab:Button({
     end
 })
 
+-- OtherTab content
 local ESPLabel
-
 local ESPDropdown = OtherTab:Dropdown({
     Title = "ESP",
     Desc = "Options for ESP",
