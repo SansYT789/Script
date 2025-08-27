@@ -1,18 +1,56 @@
 --// Load WindUI
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/windui.lua"))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
---// Tạo main window vừa điện thoại
-local MainWindow = WindUI:CreateWindow({
-    Title = "Main",             -- Tên cửa sổ
-    Size = UDim2.new(0, 350, 0, 200),  
+--// Tạo main window chuẩn
+local Window = WindUI:CreateWindow({
+    Title = "MangoHub | Demo Version",
+    Icon = "door-open",
+    Author = "MADE BY TEAM VINREACH",
+    Folder = "MangoHub",
+    Size = UDim2.new(0, 350, 0, 250),
     Theme = "Mango"
 })
 
---// Thêm text hiển thị
-MainWindow:AddLabel({
-    Text = "Welcome to MangoHub! 🍊",
+--// Thêm label
+local MainLabel = Window:AddLabel({ Text = "Welcome to MangoHub! 🍊" })
+local MadeByLabel = Window:AddLabel({ Text = "Script Made By Vinreach" })
+
+--// Tạo tab demo
+local DemoTab = Window:AddTab({ Title = "Demo" })
+
+--// Thêm nút demo
+local ClickButton = DemoTab:AddButton({
+    Text = "Click Me!",
+    Callback = function()
+        print("Button clicked!")
+    end
 })
 
-MainWindow:AddLabel({
-    Text = "Script Made By Vinreach",
+--// Thêm toggle demo
+local EnableToggle = DemoTab:AddToggle({
+    Title = "Enable Feature",
+    Default = false,
+    Callback = function(value)
+        print("Toggle state:", value)
+    end
+})
+
+--// Thêm slider demo
+local VolumeSlider = DemoTab:AddSlider({
+    Title = "Volume",
+    Min = 0,
+    Max = 100,
+    Default = 50,
+    Callback = function(value)
+        print("Volume set to", value)
+    end
+})
+
+--// Thêm input demo
+local NameInput = DemoTab:AddInput({
+    Title = "Enter Name",
+    Placeholder = "Type here...",
+    Callback = function(text)
+        print("Input:", text)
+    end
 })
