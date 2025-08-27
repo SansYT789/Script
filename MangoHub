@@ -21,16 +21,15 @@ local OtherTab = Window:Tab({
     Locked = false
 })
 
--- Main tab content
-local VersionLabel = MainTab:Label({
+MainTab:Label({
     Title = "Version: 1.0 [ Demo ]"
 })
 
-local DiscordLabel = MainTab:Label({
+MainTab:Label({
     Title = "Discord: https://discord.com/krnl"
 })
 
-local AntiAFK = MainTab:Button({
+MainTab:Button({
     Title = "Anti afk",
     Desc = "Prevents idle kick",
     Locked = false,
@@ -45,20 +44,14 @@ local AntiAFK = MainTab:Button({
     end
 })
 
--- Other tab content
-local ESPLabel
-local ESPDropdown = OtherTab:Dropdown({
+OtherTab:Dropdown({
     Title = "ESP",
     Desc = "Options for ESP",
     Values = {"Soon"},
     Multi = false,
     Callback = function(value)
-        if ESPLabel then
-            ESPLabel:SetText(value)
-        else
-            ESPLabel = OtherTab:Label({
-                Title = value
-            })
-        end
+        OtherTab:Label({
+            Title = value
+        })
     end
 })
