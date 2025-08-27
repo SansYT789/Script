@@ -4,54 +4,115 @@ local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
-    Size = UDim2.new(0, 350, 0, 300),
+    Size = UDim2.new(0, 500, 0, 400),
     Theme = "Dark",
     Icon = "airplay"
 })
 
-local MainTab = Window:Tab({
+-- Sections
+local Tabs = {
+    Main = Window:Section({ Title = "Main Section", Opened = true }),
+    Other = Window:Section({ Title = "Other Section", Opened = true })
+}
+
+-- MAIN TAB
+local MainTab = Tabs.Main:Tab({
     Title = "Main",
     Icon = "house",
-    Locked = false
+    Desc = "Main features"
 })
 
-local OtherTab = Window:Tab({
-    Title = "Other",
-    Icon = "settings",
-    Locked = false
-})
-
-MainTab:Label({
-    Title = "Version: 1.0 [ Demo ]"
-})
-
-MainTab:Label({
-    Title = "Discord: https://discord.com/krnl"
-})
+MainTab:Label({ Title = "Version: 1.0" })
 
 MainTab:Button({
-    Title = "Anti afk",
+    Title = "Anti AFK",
     Desc = "Prevents idle kick",
-    Locked = false,
     Callback = function()
+        if _G.antiAfkConn then
+            _G.antiAfkConn:Disconnect()
+        end
         local vu = game:GetService("VirtualUser")
-        game:GetService("Players").LocalPlayer.Idled:Connect(function()
-            vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        _G.antiAfkConn = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
             task.wait(1)
-            vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+            vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
         end)
-        print("Anti AFK Enabled")
+        WindUI:Notify({
+            Title = "Anti AFK",
+            Content = "Enabled!",
+            Duration = 2
+        })
     end
 })
 
+-- OTHER TAB
+local OtherTab = Tabs.Other:Tab({
+    Title = "Other",
+    Icon = "settings",
+    Desc = "Extra utilities"
+})
+
+-- Dropdown ESP
 OtherTab:Dropdown({
     Title = "ESP",
     Desc = "Options for ESP",
     Values = {"Soon"},
     Multi = false,
     Callback = function(value)
-        OtherTab:Label({
-            Title = value
+        WindUI:Notify({
+            Title = "ESP",
+            Content = "Selected: " .. value,
+            Duration = 2
         })
     end
 })
+
+-- Theme Switcher
+OtherTab:Button({
+    Title = "Switch Theme",
+    Icon = "moon",
+    Callback = function()
+        WindUI:SetTheme(WindUI:GetCurrentTheme() == "Dark" and "Light" or "Dark")
+        WindUI:Notify({
+            Title = "Theme Changed",
+            Content = "Now: " .. WindUI:GetCurrentTheme(),
+            Duration = 2
+        })
+    end
+})
+
+-- Config Manager
+local ConfigManager = Window.ConfigManager
+if ConfigManager then
+    ConfigManager:Init(Window)
+
+    OtherTab:Button({
+        Title = "Save Config",
+        Icon = "save",
+        Callback = function()
+            local configFile = ConfigManager:CreateConfig("default")
+            configFile:Save()
+            WindUI:Notify({
+                Title = "Config",
+                Content = "Saved successfully!",
+                Duration = 2
+            })
+        end
+    })
+
+    OtherTab:Button({
+        Title = "Load Config",
+        Icon = "folder",
+        Callback = function()
+            local configFile = ConfigManager:CreateConfig("default")
+            configFile:Load()
+            WindUI:Notify({
+                Title = "Config",
+                Content = "Loaded successfully!",
+                Duration = 2
+            })
+        end
+    })
+else
+    OtherTab:Label({ Title = "Config Manager not available" })
+end
