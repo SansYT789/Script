@@ -2,8 +2,8 @@
 -- 🟣 MangoHub - Anti AFK Full Pack (Fixed)
 -- =================================
 
---// Load WindUI (RoyRedRedVN version)
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
+--// Load WindUI (Footagesus version để dùng Section system)
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 --// Anti AFK Settings
 getgenv().AntiAFK_Mode = "auto"
@@ -13,44 +13,84 @@ getgenv().AntiAFK_Connection = nil
 --// Main Window
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
+    Icon = "shield",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
-    Size = UDim2.new(0, 350, 0, 300),
+    Size = UDim2.fromOffset(450, 400),
     Theme = "Dark"
 })
 
---// Tabs
-local MainTab = Window:Tab({
-    Title = "Main",
-    Locked = false
+--// Create Sections
+local MainSection = Window:Section({ Title = "Anti AFK System", Opened = true })
+local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
+
+--// Create Tabs
+local AntiAFKTab = MainSection:Tab({ 
+    Title = "Anti AFK", 
+    Icon = "shield", 
+    Desc = "Prevent getting kicked for AFK" 
 })
 
-local SettingsTab = Window:Tab({
-    Title = "Settings", 
-    Locked = false
+local ConfigTab = SettingsSection:Tab({ 
+    Title = "Configuration", 
+    Icon = "settings",
+    Desc = "UI and system settings"
 })
 
---// Main Tab Content
-MainTab:Label({ Title = "Version: 1.0 [ Demo ]" })
-MainTab:Label({ Title = "Anti AFK Mode" })
+--// Anti AFK Tab - để trống như yêu cầu
 
-MainTab:Dropdown({
+--// Configuration Tab Content
+ConfigTab:Paragraph({
+    Title = "Version: 1.0 [ Demo ]",
+    Desc = "MangoHub Anti AFK System",
+    Image = "info",
+    ImageSize = 18,
+    Color = Color3.fromHex("#30ff6a")
+})
+
+ConfigTab:Divider()
+
+ConfigTab:Paragraph({
+    Title = "Anti AFK Mode",
+    Desc = "Choose how the system will keep you active",
+    Image = "settings",
+    ImageSize = 16,
+    Color = "White"
+})
+
+ConfigTab:Dropdown({
     Title = "Choose Mode",
-    Values = {"auto","click","jump","rotate"},
-    Multi = false,
+    Values = {"auto", "click", "jump", "rotate"},
+    Value = "auto",
     Callback = function(value)
         getgenv().AntiAFK_Mode = value
-        print("🔧 Anti AFK Mode set to: "..value)
+        WindUI:Notify({
+            Title = "Mode Changed",
+            Content = "Anti AFK Mode set to: " .. value,
+            Icon = "settings",
+            Duration = 2
+        })
+        print("🔧 Anti AFK Mode set to: " .. value)
     end
 })
 
-MainTab:Button({
+ConfigTab:Button({
     Title = "Toggle Anti AFK",
+    Icon = "power",
+    Variant = "Primary",
     Callback = function()
         getgenv().AntiAFK_Enabled = not getgenv().AntiAFK_Enabled
-        print("✅ Anti AFK: "..tostring(getgenv().AntiAFK_Enabled))
+        local status = getgenv().AntiAFK_Enabled
+        
+        WindUI:Notify({
+            Title = "Anti AFK",
+            Content = status and "Anti AFK Enabled!" or "Anti AFK Disabled!",
+            Icon = status and "check" or "x",
+            Duration = 3
+        })
+        print("✅ Anti AFK: " .. tostring(status))
 
-        if getgenv().AntiAFK_Enabled then
+        if status then
             local Players = game:GetService("Players")
             local VirtualUser = game:GetService("VirtualUser")
             local Camera = workspace.CurrentCamera
@@ -66,8 +106,8 @@ MainTab:Button({
                 local mode = getgenv().AntiAFK_Mode
 
                 if mode == "auto" then
-                    local modes = {"click","jump","rotate"}
-                    mode = modes[math.random(1,#modes)]
+                    local modes = {"click", "jump", "rotate"}
+                    mode = modes[math.random(1, #modes)]
                 end
 
                 if mode == "click" then
@@ -76,17 +116,21 @@ MainTab:Button({
                     print("🖱️ Fake Click")
 
                 elseif mode == "jump" then
-                    local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
-                    if humanoid then humanoid.Jump = true end
-                    print("🦘 Jump")
+                    local character = Player.Character
+                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        humanoid.Jump = true
+                        print("🦘 Jump")
+                    end
 
                 elseif mode == "rotate" then
-                    Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(30), 0)
-                    print("🎥 Rotate Camera")
+                    if Camera then
+                        Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(30), 0)
+                        print("🎥 Rotate Camera")
+                    end
                 end
             end)
         else
-            -- Stop Anti AFK
             if getgenv().AntiAFK_Connection then
                 getgenv().AntiAFK_Connection:Disconnect()
                 getgenv().AntiAFK_Connection = nil
@@ -95,44 +139,59 @@ MainTab:Button({
     end
 })
 
-MainTab:Label({ Title = "Status: Ready" })
+ConfigTab:Divider()
 
---// Settings Tab Content
-SettingsTab:Label({ Title = "UI Settings" })
+ConfigTab:Paragraph({
+    Title = "UI Customization", 
+    Desc = "Adjust interface settings",
+    Image = "palette",
+    ImageSize = 16,
+    Color = Color3.fromHex("#667eea")
+})
 
-SettingsTab:Dropdown({
-    Title = "Theme",
-    Values = {"Dark", "Light"},
-    Multi = false,
-    Callback = function(value)
-        -- Theme change logic here if supported
-        print("Theme changed to: "..value)
+-- Theme selector
+local themes = {"Dark", "Light"}
+ConfigTab:Dropdown({
+    Title = "Select Theme",
+    Values = themes,
+    Value = "Dark", 
+    Callback = function(theme)
+        WindUI:SetTheme(theme)
+        WindUI:Notify({
+            Title = "Theme Changed",
+            Content = "Switched to " .. theme .. " theme",
+            Icon = "palette",
+            Duration = 2
+        })
     end
 })
 
-SettingsTab:Slider({
-    Title = "UI Scale",
-    Min = 0.5,
-    Max = 2,
-    Default = 1,
-    Callback = function(value)
-        print("UI Scale: "..value)
-    end
-})
-
-SettingsTab:Toggle({
+ConfigTab:Toggle({
     Title = "Show Notifications",
-    Default = true,
+    Desc = "Enable system notifications",
+    Value = true,
     Callback = function(state)
-        print("Notifications: "..tostring(state))
+        WindUI:Notify({
+            Title = "Notifications",
+            Content = state and "Notifications enabled" or "Notifications disabled",
+            Duration = 2
+        })
     end
 })
 
---// Cleanup when script ends
-game.Players.PlayerRemoving:Connect(function(player)
-    if player == game.Players.LocalPlayer then
-        if getgenv().AntiAFK_Connection then
-            getgenv().AntiAFK_Connection:Disconnect()
-        end
+--// Startup notification
+WindUI:Notify({
+    Title = "MangoHub Loaded!",
+    Content = "Anti AFK system ready",
+    Icon = "check-circle",
+    Duration = 3
+})
+
+--// Cleanup
+Window:OnClose(function()
+    if getgenv().AntiAFK_Connection then
+        getgenv().AntiAFK_Connection:Disconnect()
+        getgenv().AntiAFK_Connection = nil
     end
+    getgenv().AntiAFK_Enabled = false
 end)
