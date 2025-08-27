@@ -6,12 +6,13 @@
 local WindUI_URL = "https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"
 local WindUI = loadstring(game:HttpGet(WindUI_URL))()
 
---// Khởi tạo cửa sổ chính
+--// Khởi tạo cửa sổ chính (nhỏ gọn, dễ kéo)
 local Window = WindUI:CreateWindow({
     Name = "MangoHub",  -- Tên cửa sổ UI
     Theme = "Dark",
-    Size = UDim2.new(0, 400, 0, 300),
-    Position = UDim2.new(0.5, -200, 0.5, -150)
+    Size = UDim2.fromOffset(400, 300), -- vừa đủ kéo
+    Position = UDim2.fromScale(0.5, 0.5), -- luôn center
+    AnchorPoint = Vector2.new(0.5, 0.5) -- fix center anchor
 })
 
 --// Tạo tab chính
