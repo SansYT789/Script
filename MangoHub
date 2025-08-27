@@ -21,10 +21,16 @@ local Window = WindUI:CreateWindow({
 })
 
 --// Create Sections
-local MainSection = Window:Section({ Title = "Anti AFK System", Opened = true })
+local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 
 --// Create Tabs
+local MainTab = MainSection:Tab({ 
+    Title = "Main", 
+    Icon = "home", 
+    Desc = "Main information and links" 
+})
+
 local AntiAFKTab = MainSection:Tab({ 
     Title = "Anti AFK", 
     Icon = "shield", 
@@ -35,6 +41,40 @@ local ConfigTab = SettingsSection:Tab({
     Title = "Configuration", 
     Icon = "settings",
     Desc = "UI and system settings"
+})
+
+--// Main Tab Content
+MainTab:Paragraph({
+    Title = "Version: 1.0 [ Demo ]",
+    Desc = "MangoHub - Made By Group Vinreach",
+    Image = "info",
+    ImageSize = 18,
+    Color = Color3.fromHex("#30ff6a")
+})
+
+MainTab:Divider()
+
+MainTab:Button({
+    Title = "Join Discord",
+    Icon = "message-circle",
+    Variant = "Primary",
+    Callback = function()
+        setclipboard("https://discord.gg/vinreach")
+        WindUI:Notify({
+            Title = "Discord Link Copied!",
+            Content = "Paste the link in your browser to join our Discord server",
+            Icon = "clipboard",
+            Duration = 4
+        })
+    end
+})
+
+MainTab:Paragraph({
+    Title = "Features",
+    Desc = "• Anti AFK System\n• Multiple Detection Modes\n• Auto Random Actions\n• Easy Configuration",
+    Image = "list",
+    ImageSize = 16,
+    Color = Color3.fromHex("#667eea")
 })
 
 --// Anti AFK Tab - để trống như yêu cầu
