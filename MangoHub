@@ -1,78 +1,18 @@
--- ============================
--- 🟣 MangoHub Minimal (WindUI)
--- ============================
-
 --// Load WindUI
-local WindUI_URL = "https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"
-local WindUI = loadstring(game:HttpGet(WindUI_URL))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/windui.lua"))()
 
---// Create main window (small, draggable)
-local localWindow = WindUI:CreateWindow({
-    Name = "MangoHub",
-    Theme = "Dark",
-    Size = UDim2.fromOffset(400, 300), -- vừa đủ kéo
-    Position = UDim2.fromScale(0.5, 0.5), -- center màn hình
-    AnchorPoint = Vector2.new(0.5, 0.5), -- fix center anchor
-    Resizable = true
+--// Tạo main window vừa điện thoại
+local MainWindow = WindUI:CreateWindow({
+    Title = "Main",             -- Tên cửa sổ
+    Size = UDim2.new(0, 350, 0, 200),  
+    Theme = "Mango"
 })
 
---// Main Tab
-local localMainTab = localWindow:CreateTab("Main")
-
---// Info Label
-localMainTab:CreateLabel("Made by RoyRedRed")
-
---// Example Toggle
-localMainTab:CreateToggle({
-    Name = "Example Toggle",
-    Default = false,
-    Callback = function(state)
-        print("Toggle state:", state)
-    end
+--// Thêm text hiển thị
+MainWindow:AddLabel({
+    Text = "Welcome to MangoHub! 🍊",
 })
 
---// GetKey Section
-local localSection = localMainTab:CreateSection("Get Key")
-
---// TextBox for key input
-local localKeyBox = localSection:CreateTextBox({
-    Name = "Enter Key",
-    Placeholder = "Enter your key...",
-    Callback = function(value)
-        print("User entered key: " .. value)
-    end
-})
-
---// Submit Button
-localSection:CreateButton({
-    Name = "Submit Key",
-    Callback = function()
-        local localEnteredKey = localKeyBox:GetValue()
-        local localValidKeys = { "MangoVIP", "RedVIP" }
-        local localIsValid = false
-        for _, key in pairs(localValidKeys) do
-            if localEnteredKey == key then
-                localIsValid = true
-                break
-            end
-        end
-
-        if localIsValid then
-            WindUI:Notify({
-                Title = "MangoHub",
-                Content = "✅ Valid key! Welcome to MangoHub!",
-                Duration = 3,
-                Color = Color3.fromRGB(255, 165, 0) -- mango color
-            })
-            print("User entered a valid key: " .. localEnteredKey)
-        else
-            WindUI:Notify({
-                Title = "MangoHub",
-                Content = "❌ Invalid key! Try again.",
-                Duration = 3,
-                Color = Color3.fromRGB(255, 0, 0)
-            })
-            print("User entered an invalid key: " .. localEnteredKey)
-        end
-    end
+MainWindow:AddLabel({
+    Text = "Script Made By Vinreach",
 })
