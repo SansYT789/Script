@@ -7,7 +7,7 @@ local Window = WindUI:CreateWindow({
     Author = "Made By Group Vinreach",
     Folder = "Mango",
     Size = UDim2.new(0, 350, 0, 250),
-    Theme = "Dark",
+    Theme = "dark",
     Icon = "AirPlay"   -- 🔹 icon đầu window
 })
 
