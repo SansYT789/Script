@@ -1,20 +1,23 @@
 -- Load WindUI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
+local WindUILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
--- Create MangoHub Window
-local Window = Library:CreateWindow("MangoHub")
+-- Create Window
+local localWindow = WindUILibrary:CreateWindow("MangoHub")
 
 -- Create Main Tab
-local MainTab = Window:CreateTab("Main")
+local localMainTab = localWindow:CreateTab("Main")
+
+-- Set Theme Color (Mango)
+WindUILibrary:SetThemeColor(Color3.fromRGB(255, 165, 0))
 
 -- Valid Key
-local validKey = "Sigma"
+local localValidKey = "MangoVIP"
 
--- Create Get Key Section
-local Section = MainTab:CreateSection("Get Key")
+-- Create Section
+local localSection = localMainTab:CreateSection("Get Key")
 
--- TextBox for Key Input
-local KeyBox = Section:CreateTextBox({
+-- Create TextBox for Key Input
+local localKeyBox = localSection:CreateTextBox({
     Name = "Enter Key",
     Placeholder = "Enter your key...",
     Callback = function(value)
@@ -22,20 +25,17 @@ local KeyBox = Section:CreateTextBox({
     end
 })
 
--- Submit Button
-Section:CreateButton({
+-- Create Submit Button
+localSection:CreateButton({
     Name = "Submit Key",
     Callback = function()
-        local enteredKey = KeyBox:GetValue()
-        if enteredKey == validKey then
-            Library:Notify("✅ Valid key! Welcome to MangoHub!", 3, Color3.fromRGB(255, 165, 0)) -- mango color
-            print("User entered a valid key: " .. enteredKey)
+        local localEnteredKey = localKeyBox:GetValue()
+        if localEnteredKey == localValidKey then
+            WindUILibrary:Notify("✅ Valid key! Welcome to MangoHub!", 3, Color3.fromRGB(255, 165, 0))
+            print("User entered a valid key: " .. localEnteredKey)
         else
-            Library:Notify("❌ Invalid key! Try again.", 3, Color3.fromRGB(255, 0, 0))
-            print("User entered an invalid key: " .. enteredKey)
+            WindUILibrary:Notify("❌ Invalid key! Try again.", 3, Color3.fromRGB(255, 0, 0))
+            print("User entered an invalid key: " .. localEnteredKey)
         end
     end
 })
-
--- MangoHub Theme Color
-Library:SetThemeColor(Color3.fromRGB(255, 165, 0)) -- 🍑
