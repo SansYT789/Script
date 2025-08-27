@@ -27,13 +27,13 @@ local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 --// Create Tabs
 local MainTab = MainSection:Tab({ 
     Title = "Main", 
-    Icon = "home", 
+    Icon = "house", 
     Desc = "Main information and links" 
 })
 
-local AntiAFKTab = MainSection:Tab({ 
-    Title = "Anti AFK", 
-    Icon = "shield", 
+local AutoTab = MainSection:Tab({ 
+    Title = "Automatic", 
+    Icon = "click", 
     Desc = "Prevent getting kicked for AFK" 
 })
 
