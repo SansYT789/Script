@@ -2,8 +2,13 @@
 -- 🟣 MangoHub - Anti AFK Full Pack (Fixed)
 -- =================================
 
---// Load WindUI
+--// Load WindUI (RoyRedRedVN version)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
+
+--// Anti AFK Settings
+getgenv().AntiAFK_Mode = "auto"
+getgenv().AntiAFK_Enabled = false
+getgenv().AntiAFK_Connection = nil
 
 --// Main Window
 local Window = WindUI:CreateWindow({
@@ -20,11 +25,12 @@ local MainTab = Window:Tab({
     Locked = false
 })
 
---// Anti AFK Settings
-getgenv().AntiAFK_Mode = "auto"
-getgenv().AntiAFK_Enabled = false
+local SettingsTab = Window:Tab({
+    Title = "Settings", 
+    Locked = false
+})
 
---// UI
+--// Main Tab Content
 MainTab:Label({ Title = "Version: 1.0 [ Demo ]" })
 MainTab:Label({ Title = "Anti AFK Mode" })
 
@@ -50,7 +56,12 @@ MainTab:Button({
             local Camera = workspace.CurrentCamera
             local Player = Players.LocalPlayer
 
-            Player.Idled:Connect(function()
+            -- Disconnect old connection
+            if getgenv().AntiAFK_Connection then
+                getgenv().AntiAFK_Connection:Disconnect()
+            end
+
+            getgenv().AntiAFK_Connection = Player.Idled:Connect(function()
                 if not getgenv().AntiAFK_Enabled then return end
                 local mode = getgenv().AntiAFK_Mode
 
@@ -74,6 +85,54 @@ MainTab:Button({
                     print("🎥 Rotate Camera")
                 end
             end)
+        else
+            -- Stop Anti AFK
+            if getgenv().AntiAFK_Connection then
+                getgenv().AntiAFK_Connection:Disconnect()
+                getgenv().AntiAFK_Connection = nil
+            end
         end
     end
 })
+
+MainTab:Label({ Title = "Status: Ready" })
+
+--// Settings Tab Content
+SettingsTab:Label({ Title = "UI Settings" })
+
+SettingsTab:Dropdown({
+    Title = "Theme",
+    Values = {"Dark", "Light"},
+    Multi = false,
+    Callback = function(value)
+        -- Theme change logic here if supported
+        print("Theme changed to: "..value)
+    end
+})
+
+SettingsTab:Slider({
+    Title = "UI Scale",
+    Min = 0.5,
+    Max = 2,
+    Default = 1,
+    Callback = function(value)
+        print("UI Scale: "..value)
+    end
+})
+
+SettingsTab:Toggle({
+    Title = "Show Notifications",
+    Default = true,
+    Callback = function(state)
+        print("Notifications: "..tostring(state))
+    end
+})
+
+--// Cleanup when script ends
+game.Players.PlayerRemoving:Connect(function(player)
+    if player == game.Players.LocalPlayer then
+        if getgenv().AntiAFK_Connection then
+            getgenv().AntiAFK_Connection:Disconnect()
+        end
+    end
+end)
