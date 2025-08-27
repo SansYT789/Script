@@ -3,7 +3,7 @@ local WindUILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Roy
 
 -- Create Window MangoHub
 local localWindow = WindUILib:CreateWindow({
-    Title = "🍑 MangoHub",
+    Title = "MangoHub",
     Center = true,
     AutoShow = true
 })
