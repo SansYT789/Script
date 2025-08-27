@@ -1,1 +1,30 @@
+-- ============================
+-- 🟣 WindUI Minimal (Tên MangoHub)
+-- ============================
 
+--// Nhúng WindUI từ GitHub
+local WindUI_URL = "https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"
+local WindUI = loadstring(game:HttpGet(WindUI_URL))()
+
+--// Khởi tạo cửa sổ chính
+local Window = WindUI:CreateWindow({
+    Name = "MangoHub",  -- Tên cửa sổ UI
+    Theme = "Dark",
+    Size = UDim2.new(0, 400, 0, 300),
+    Position = UDim2.new(0.5, -200, 0.5, -150)
+})
+
+--// Tạo tab chính
+local MainTab = Window:CreateTab("Main")
+
+--// Tạo label thông tin
+MainTab:CreateLabel("Made by RoyRedRed")
+
+--// Tạo toggle ví dụ
+MainTab:CreateToggle({
+    Name = "Example Toggle",
+    Default = false,
+    Callback = function(state)
+        print("Toggle state:", state)
+    end
+})
