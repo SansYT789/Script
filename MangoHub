@@ -1,7 +1,5 @@
---// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
---// Tạo main window với theme Dark
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Author = "Made By Group Vinreach",
@@ -11,7 +9,6 @@ local Window = WindUI:CreateWindow({
     Icon = "airplay"
 })
 
---// Thêm tab Main với icon House
 local MainTab = Window:Tab({
     Title = "Main",
     Icon = "house",
@@ -20,6 +17,47 @@ local MainTab = Window:Tab({
 
 local OtherTab = Window:Tab({
     Title = "Other",
-    Icon = "other",
+    Icon = "settings",
     Locked = false
+})
+
+local VersionLabel = MainTab:Label({
+    Title = "Version: 1.0 [ Demo ]"
+})
+
+local DiscordLabel = MainTab:Label({
+    Title = "Discord: https://discord.com/krnl"
+})
+
+local AntiAFK = MainTab:Button({
+    Title = "Anti afk",
+    Desc = "Prevents idle kick",
+    Locked = false,
+    Callback = function()
+        local vu = game:GetService("VirtualUser")
+        game:GetService("Players").LocalPlayer.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        end)
+        print("Anti AFK Enabled")
+    end
+})
+
+local ESPLabel
+
+local ESPDropdown = OtherTab:Dropdown({
+    Title = "ESP",
+    Desc = "Options for ESP",
+    Values = {"Soon"},
+    Multi = false,
+    Callback = function(value)
+        if ESPLabel then
+            ESPLabel:SetText(value)
+        else
+            ESPLabel = OtherTab:Label({
+                Title = value
+            })
+        end
+    end
 })
