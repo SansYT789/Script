@@ -1,0 +1,41 @@
+-- Load WindUI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
+
+-- Create MangoHub Window
+local Window = Library:CreateWindow("MangoHub")
+
+-- Create Main Tab
+local MainTab = Window:CreateTab("Main")
+
+-- Valid Key
+local validKey = "Sigma"
+
+-- Create Get Key Section
+local Section = MainTab:CreateSection("Get Key")
+
+-- TextBox for Key Input
+local KeyBox = Section:CreateTextBox({
+    Name = "Enter Key",
+    Placeholder = "Enter your key...",
+    Callback = function(value)
+        print("User entered key: " .. value)
+    end
+})
+
+-- Submit Button
+Section:CreateButton({
+    Name = "Submit Key",
+    Callback = function()
+        local enteredKey = KeyBox:GetValue()
+        if enteredKey == validKey then
+            Library:Notify("✅ Valid key! Welcome to MangoHub!", 3, Color3.fromRGB(255, 165, 0)) -- mango color
+            print("User entered a valid key: " .. enteredKey)
+        else
+            Library:Notify("❌ Invalid key! Try again.", 3, Color3.fromRGB(255, 0, 0))
+            print("User entered an invalid key: " .. enteredKey)
+        end
+    end
+})
+
+-- MangoHub Theme Color
+Library:SetThemeColor(Color3.fromRGB(255, 165, 0)) -- 🍑
