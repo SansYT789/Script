@@ -1,19 +1,23 @@
--- Load WindUI
-local WindUILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
+-- Load WindUI (the latest)
+local WindUILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
--- Create Window
-local localWindow = WindUILibrary:CreateWindow("MangoHub")
+-- Create Window MangoHub
+local localWindow = WindUILib:CreateWindow({
+    Title = "🍑 MangoHub",
+    Center = true,
+    AutoShow = true
+})
 
 -- Create Main Tab
 local localMainTab = localWindow:CreateTab("Main")
 
--- Set Theme Color (Mango)
-WindUILibrary:SetThemeColor(Color3.fromRGB(255, 165, 0))
+-- Set Mango Theme
+WindUILib:SetThemeColor(Color3.fromRGB(255, 165, 0)) -- mango color
 
 -- Valid Key
 local localValidKey = "MangoVIP"
 
--- Create Section
+-- Create Section for Get Key
 local localSection = localMainTab:CreateSection("Get Key")
 
 -- Create TextBox for Key Input
@@ -25,16 +29,26 @@ local localKeyBox = localSection:CreateTextBox({
     end
 })
 
--- Create Submit Button
+-- Submit Button
 localSection:CreateButton({
     Name = "Submit Key",
     Callback = function()
         local localEnteredKey = localKeyBox:GetValue()
         if localEnteredKey == localValidKey then
-            WindUILibrary:Notify("✅ Valid key! Welcome to MangoHub!", 3, Color3.fromRGB(255, 165, 0))
+            WindUILib:Notify({
+                Title = "MangoHub",
+                Content = "✅ Valid key! Welcome to MangoHub!",
+                Duration = 3,
+                Color = Color3.fromRGB(255, 165, 0)
+            })
             print("User entered a valid key: " .. localEnteredKey)
         else
-            WindUILibrary:Notify("❌ Invalid key! Try again.", 3, Color3.fromRGB(255, 0, 0))
+            WindUILib:Notify({
+                Title = "MangoHub",
+                Content = "❌ Invalid key! Try again.",
+                Duration = 3,
+                Color = Color3.fromRGB(255, 0, 0)
+            })
             print("User entered an invalid key: " .. localEnteredKey)
         end
     end
