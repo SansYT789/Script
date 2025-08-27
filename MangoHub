@@ -1,118 +1,79 @@
+-- =================================
+-- 🟣 MangoHub - Anti AFK Full Pack (Fixed)
+-- =================================
+
+--// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"))()
 
+--// Main Window
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
-    Size = UDim2.new(0, 500, 0, 400),
-    Theme = "Dark",
-    Icon = "airplay"
+    Size = UDim2.new(0, 350, 0, 300),
+    Theme = "Dark"
 })
 
--- Sections
-local Tabs = {
-    Main = Window:Section({ Title = "Main Section", Opened = true }),
-    Other = Window:Section({ Title = "Other Section", Opened = true })
-}
-
--- MAIN TAB
-local MainTab = Tabs.Main:Tab({
+--// Tabs
+local MainTab = Window:Tab({
     Title = "Main",
-    Icon = "house",
-    Desc = "Main features"
+    Locked = false
 })
 
-MainTab:Label({ Title = "Version: 1.0" })
+--// Anti AFK Settings
+getgenv().AntiAFK_Mode = "auto"
+getgenv().AntiAFK_Enabled = false
 
-MainTab:Button({
-    Title = "Anti AFK",
-    Desc = "Prevents idle kick",
-    Callback = function()
-        if _G.antiAfkConn then
-            _G.antiAfkConn:Disconnect()
-        end
-        local vu = game:GetService("VirtualUser")
-        _G.antiAfkConn = game:GetService("Players").LocalPlayer.Idled:Connect(function()
-            vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            task.wait(1)
-            vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        end)
-        WindUI:Notify({
-            Title = "Anti AFK",
-            Content = "Enabled!",
-            Duration = 2
-        })
-    end
-})
+--// UI
+MainTab:Label({ Title = "Version: 1.0 [ Demo ]" })
+MainTab:Label({ Title = "Anti AFK Mode" })
 
--- OTHER TAB
-local OtherTab = Tabs.Other:Tab({
-    Title = "Other",
-    Icon = "settings",
-    Desc = "Extra utilities"
-})
-
--- Dropdown ESP
-OtherTab:Dropdown({
-    Title = "ESP",
-    Desc = "Options for ESP",
-    Values = {"Soon"},
+MainTab:Dropdown({
+    Title = "Choose Mode",
+    Values = {"auto","click","jump","rotate"},
     Multi = false,
     Callback = function(value)
-        WindUI:Notify({
-            Title = "ESP",
-            Content = "Selected: " .. value,
-            Duration = 2
-        })
+        getgenv().AntiAFK_Mode = value
+        print("🔧 Anti AFK Mode set to: "..value)
     end
 })
 
--- Theme Switcher
-OtherTab:Button({
-    Title = "Switch Theme",
-    Icon = "moon",
+MainTab:Button({
+    Title = "Toggle Anti AFK",
     Callback = function()
-        WindUI:SetTheme(WindUI:GetCurrentTheme() == "Dark" and "Light" or "Dark")
-        WindUI:Notify({
-            Title = "Theme Changed",
-            Content = "Now: " .. WindUI:GetCurrentTheme(),
-            Duration = 2
-        })
+        getgenv().AntiAFK_Enabled = not getgenv().AntiAFK_Enabled
+        print("✅ Anti AFK: "..tostring(getgenv().AntiAFK_Enabled))
+
+        if getgenv().AntiAFK_Enabled then
+            local Players = game:GetService("Players")
+            local VirtualUser = game:GetService("VirtualUser")
+            local Camera = workspace.CurrentCamera
+            local Player = Players.LocalPlayer
+
+            Player.Idled:Connect(function()
+                if not getgenv().AntiAFK_Enabled then return end
+                local mode = getgenv().AntiAFK_Mode
+
+                if mode == "auto" then
+                    local modes = {"click","jump","rotate"}
+                    mode = modes[math.random(1,#modes)]
+                end
+
+                if mode == "click" then
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
+                    print("🖱️ Fake Click")
+
+                elseif mode == "jump" then
+                    local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then humanoid.Jump = true end
+                    print("🦘 Jump")
+
+                elseif mode == "rotate" then
+                    Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(30), 0)
+                    print("🎥 Rotate Camera")
+                end
+            end)
+        end
     end
 })
-
--- Config Manager
-local ConfigManager = Window.ConfigManager
-if ConfigManager then
-    ConfigManager:Init(Window)
-
-    OtherTab:Button({
-        Title = "Save Config",
-        Icon = "save",
-        Callback = function()
-            local configFile = ConfigManager:CreateConfig("default")
-            configFile:Save()
-            WindUI:Notify({
-                Title = "Config",
-                Content = "Saved successfully!",
-                Duration = 2
-            })
-        end
-    })
-
-    OtherTab:Button({
-        Title = "Load Config",
-        Icon = "folder",
-        Callback = function()
-            local configFile = ConfigManager:CreateConfig("default")
-            configFile:Load()
-            WindUI:Notify({
-                Title = "Config",
-                Content = "Loaded successfully!",
-                Duration = 2
-            })
-        end
-    })
-else
-    OtherTab:Label({ Title = "Config Manager not available" })
-end
