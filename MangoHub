@@ -17,3 +17,9 @@ local MainTab = Window:Tab({
     Icon = "house",
     Locked = false
 })
+
+local OtherTab = Window:Tab({
+    Title = "Other",
+    Icon = "other",
+    Locked = false
+})
