@@ -1,11 +1,10 @@
 -- =================================
--- 🟣 MangoHub - Full WindUI + Automatic + Egg Visual + Auto Open Seed Pack
+-- 🟣 MangoHub - Full WindUI + Automatic + ESP + Auto Open Seed Pack/Chest
 -- =================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
-
 local player = Players.LocalPlayer
 
 -- =========================
@@ -13,6 +12,8 @@ local player = Players.LocalPlayer
 -- =========================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 getgenv().ESP_Enabled = false
+getgenv().AutoStuffEnabled = false
+getgenv().AutoOpenMode = "None"
 
 -- =========================
 -- Create Window
@@ -35,9 +36,9 @@ local MiscSection = Window:Section({ Title = "ESP", Opened = true })
 -- =========================
 -- Tabs
 -- =========================
-local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })        -- info/update
-local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" }) -- auto settings
-local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })    -- toggle overlay
+local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })        
+local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" }) 
+local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })    
 
 -- =========================
 -- MainTab content
@@ -64,7 +65,7 @@ MainTab:Button({
 })
 
 -- =========================
--- AutoTab content
+-- Automatic Tab content
 -- =========================
 AutoTab:Paragraph({
     Title = "Automatic Features",
@@ -73,34 +74,56 @@ AutoTab:Paragraph({
     Color = Color3.fromHex("#ffaa00")
 })
 
+-- Toggle chung Automatic Stuff
 AutoTab:Toggle({
-    Title = "Enable Auto Stuff",
-    Desc = "Turn automatic features on/off",
+    Title = "Enable Automatic Stuff",
+    Desc = "Turn all automatic features on/off",
     Value = false,
     Callback = function(state)
-        WindUI:Notify({Title="Automatic", Content=state and "Enabled!" or "Disabled!", Icon="check", Duration=2})
+        WindUI:Notify({
+            Title="Automatic",
+            Content=state and "Enabled!" or "Disabled!",
+            Icon="check",
+            Duration=2
+        })
+        getgenv().AutoStuffEnabled = state
     end
 })
 
+-- Dropdown Mode: None / Seed Pack / Chest
 AutoTab:Dropdown({
     Title = "Mode",
-    Desc = "Select auto mode",
-    Values = {"Mode1","Mode2"},
+    Desc = "Select which item to auto open",
+    Values = {"None", "Seed Pack", "Chest"},
     Callback = function(val)
-        WindUI:Notify({Title="Automatic Mode", Content="Selected: "..val, Icon="zap", Duration=2})
+        getgenv().AutoOpenMode = val
+        WindUI:Notify({
+            Title="Automatic Mode",
+            Content="Selected: "..val,
+            Icon="zap",
+            Duration=2
+        })
     end
 })
 
--- =========================
--- Auto Open Seed Pack Button
--- =========================
+-- Nút Auto Open theo mode
 AutoTab:Button({
-    Title = "Auto Open Seed Pack",
-    Desc = "Automatically open Chest/Pack items from inventory",
+    Title = "Auto Open",
+    Desc = "Automatically open item of selected mode",
     Callback = function()
+        if not getgenv().AutoStuffEnabled then
+            WindUI:Notify({Title="Auto Open", Content="Please enable Automatic Stuff first!", Icon="warning", Duration=2})
+            return
+        end
+
+        if getgenv().AutoOpenMode == "None" then
+            WindUI:Notify({Title="Auto Open", Content="Mode is None. Nothing will be opened.", Icon="info", Duration=2})
+            return
+        end
+
         local backpack = player:WaitForChild("Backpack")
         for _, item in pairs(backpack:GetChildren()) do
-            if item:IsA("Tool") and (item.Name:match("Chest") or item.Name:match("Pack")) then
+            if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
                 -- cầm item
                 player.Character.Humanoid:EquipTool(item)
                 -- kích hoạt item
@@ -110,14 +133,14 @@ AutoTab:Button({
                     item:Activate()
                 end
                 WindUI:Notify({Title="Auto Open", Content="Opened "..item.Name, Icon="check", Duration=2})
-                break
+                break -- chỉ mở 1 item/lần
             end
         end
     end
 })
 
 -- =========================
--- Create ScreenGui overlay (Egg Visual)
+-- ESP Tab: Visual Egg + Pet
 -- =========================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "EggOverlayUI"
@@ -134,7 +157,7 @@ UiPet.BackgroundTransparency = 0.5
 UiPet.BorderSizePixel = 0
 UiPet.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner", UiPet)
+Instance.new("UICorner", UiPet)
 
 local LeftFrame = Instance.new("Frame")
 LeftFrame.Size = UDim2.new(0, 16, 0, 58)
@@ -144,7 +167,7 @@ LeftFrame.BackgroundTransparency = 0.3
 LeftFrame.BorderSizePixel = 0
 LeftFrame.Parent = UiPet
 
-local LeftCorner = Instance.new("UICorner", LeftFrame)
+Instance.new("UICorner", LeftFrame)
 
 local NameEgg = Instance.new("TextLabel")
 NameEgg.Name = "NameEgg"
@@ -168,9 +191,7 @@ NamePet.Font = Enum.Font.Comic
 NamePet.TextXAlignment = Enum.TextXAlignment.Left
 NamePet.Parent = UiPet
 
--- =========================
--- MiscTab content: Toggle ESP
--- =========================
+-- Toggle ESP Tab
 MiscTab:Button({
     Title = "Toggle Egg Visual",
     Desc = "Show/hide Egg UI overlay (client-only)",
@@ -181,9 +202,7 @@ MiscTab:Button({
     end
 })
 
--- =========================
 -- Update overlay text based on Workspace eggs
--- =========================
 RunService.RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
         for _, egg in pairs(Workspace:GetDescendants()) do
