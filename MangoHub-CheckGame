@@ -22,7 +22,7 @@ for name, id in pairs(supportedGames) do
         isSupported = true
 
         --// Load Key System của Red
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckKey"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-GAG"))()
         break
     end
 end
