@@ -1,10 +1,14 @@
 -- =================================
--- 🟣 MangoHub - Automatic + ESP Egg (Client-side Visual)
+-- 🟣 MangoHub - Automatic + ESP Egg with TextBox
 -- =================================
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 getgenv().ESP_Enabled = false -- mặc định tắt
+
+-- Services
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 -- Window mobile-friendly
 local Window = WindUI:CreateWindow({
@@ -12,52 +16,32 @@ local Window = WindUI:CreateWindow({
     Icon = "shield",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
-    Size = UDim2.fromOffset(320, 360),
+    Size = UDim2.fromOffset(320, 400),
     Theme = "Dark"
 })
 
--- Sections
+-- Sections & Tabs
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 local MiscSection = Window:Section({ Title = "ESP", Opened = true })
 
--- Tabs
 local MainTab = MainSection:Tab({ Title = "Automatic", Icon = "house" })
 local AutoTab = MainSection:Tab({ Title = "Auto Settings", Icon = "mouse-pointer-click" })
 local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
 local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 
 -- =========================
--- MainTab content (Info / Update / Discord)
+-- MainTab content
 -- =========================
 MainTab:Paragraph({
-    Title = "New Update v1.2",
-    Desc = "Added mobile-friendly UI, optimized ESP, and other bug fixes.",
+    Title = "New Update v1.3",
+    Desc = "Added TextBox ESP on eggs, optimized mobile UI, and other fixes.",
     Image = "zap",
     Color = Color3.fromHex("#00ffcc")
 })
 
-MainTab:Button({
-    Title = "Join Discord",
-    Desc = "Click to join the official Discord server",
-    Callback = function()
-        local url = "https://discord.gg/yourserver"
-        if syn and syn.request then
-            syn.request({ Url = url, Method = "GET" })
-        else
-            setclipboard(url)
-            WindUI:Notify({
-                Title = "Discord",
-                Content = "Link copied to clipboard!",
-                Icon = "check",
-                Duration = 2
-            })
-        end
-    end
-})
-
 -- =========================
--- AutoTab (automatic features placeholder)
+-- AutoTab content (placeholder)
 -- =========================
 AutoTab:Paragraph({
     Title = "Automatic Features",
@@ -75,20 +59,6 @@ AutoTab:Toggle({
             Title = "Automatic",
             Content = state and "Enabled!" or "Disabled!",
             Icon = "check",
-            Duration = 2
-        })
-    end
-})
-
-AutoTab:Dropdown({
-    Title = "Mode",
-    Desc = "Select auto mode",
-    Values = {"Mode1","Mode2"},
-    Callback = function(val)
-        WindUI:Notify({
-            Title = "Automatic Mode",
-            Content = "Selected: "..val,
-            Icon = "zap",
             Duration = 2
         })
     end
@@ -123,11 +93,8 @@ ConfigTab:Button({
 })
 
 -- =========================
--- MiscTab (ESP Egg visual only)
+-- ESP with TextBox
 -- =========================
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-
 local function makeESP(model)
     if not getgenv().ESP_Enabled then return end
     if not model:IsA("Model") then return end
@@ -136,28 +103,49 @@ local function makeESP(model)
     local part = model:FindFirstChildWhichIsA("BasePart")
     if not part then return end
 
+    -- Billboard GUI
     local bb = Instance.new("BillboardGui")
     bb.Name = "PetBillboard"
-    bb.Size = UDim2.new(0,200,0,40)
+    bb.Size = UDim2.new(0,250,0,60)
     bb.StudsOffset = Vector3.new(0,3,0)
     bb.AlwaysOnTop = true
     bb.Parent = part
 
+    -- TextLabel (hiển thị NameEgg - NamePet)
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,1,0)
+    label.Size = UDim2.new(1,0,0.5,0)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.FredokaOne
     label.TextColor3 = Color3.fromRGB(255,255,0)
     label.TextStrokeTransparency = 0.2
     label.TextScaled = true
-    label.Text = (model.Name or "Unknown Egg").." • "..(model:FindFirstChild("PetName") and model.PetName.Value or "???")
+    local petName = model:FindFirstChild("PetName") and model.PetName.Value or "Please check again"
+    label.Text = (model.Name or "Unknown Egg").." - "..petName
     label.Parent = bb
+
+    -- TextBox (cho visual textbox nhập nội dung)
+    local textbox = Instance.new("TextBox")
+    textbox.Size = UDim2.new(1,0,0.5,0)
+    textbox.Position = UDim2.new(0,0,0.5,0)
+    textbox.BackgroundTransparency = 0.3
+    textbox.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    textbox.TextColor3 = Color3.fromRGB(0,255,0)
+    textbox.Font = Enum.Font.FredokaOne
+    textbox.PlaceholderText = "Type here..."
+    textbox.TextScaled = true
+    textbox.Parent = bb
+
+    textbox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            print("User typed on "..model.Name..": "..textbox.Text)
+        end
+    end)
 end
 
 -- Toggle ESP button
 MiscTab:Button({
     Title = "Toggle ESP Egg",
-    Desc = "Show real pet names inside eggs (visual only)",
+    Desc = "Show NameEgg - NamePet inside eggs (visual only)",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
         if not getgenv().ESP_Enabled then
@@ -166,6 +154,9 @@ MiscTab:Button({
                     gui:Destroy()
                 end
             end
+            WindUI:Notify({Title="ESP", Content="ESP Disabled", Icon="eye-slash", Duration=2})
+        else
+            WindUI:Notify({Title="ESP", Content="ESP Enabled", Icon="eye", Duration=2})
         end
     end
 })
@@ -174,7 +165,7 @@ MiscTab:Button({
 RunService.RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
         for _, egg in pairs(Workspace:GetDescendants()) do
-            if egg:IsA("Model") and egg:FindFirstChild("PetName") then
+            if egg:IsA("Model") then
                 makeESP(egg)
             end
         end
