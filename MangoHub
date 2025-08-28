@@ -1,9 +1,10 @@
 -- =================================
--- 🟣 MangoHub - Full WindUI + Auto Click Seed Pack/Chest + ESP Pet (Highlight)
+-- 🟣 MangoHub - Full WindUI + Auto Click Seed Pack/Chest + ESP Egg (Billboard)
 -- =================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- =========================
@@ -19,7 +20,6 @@ getgenv().AutoOpenMode = "None"
 -- =========================
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
-    Author = "Made By Group Vinreach",
     Folder = "Mango",
     Size = UDim2.fromOffset(320, 360),
     Theme = "Dark"
@@ -31,22 +31,22 @@ local Window = WindUI:CreateWindow({
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
+local MainTab = MainSection:Tab({ Title = "Main" })
 local AutoTab = MainSection:Tab({ Title = "Automatic" })
-local MiscTab = MiscSection:Tab({ Title = "ESP Pet" })
+local MiscTab = MiscSection:Tab({ Title = "ESP Egg" })
 
 -- =========================
 -- Automatic Tab
 -- =========================
 AutoTab:Toggle({
     Title = "Auto Click Seed Pack",
-    Desc = "Automatically click items when enabled",
+    Desc = "Auto click items in backpack",
     Value = false,
     Callback = function(state)
         getgenv().AutoClickSeedPack = state
         WindUI:Notify({
             Title="Auto Click Seed Pack",
             Content=state and "Enabled!" or "Disabled!",
-            Icon="check",
             Duration=2
         })
     end
@@ -61,7 +61,6 @@ AutoTab:Dropdown({
         WindUI:Notify({
             Title="Automatic Mode",
             Content="Selected: "..val,
-            Icon="zap",
             Duration=2
         })
     end
@@ -74,9 +73,12 @@ task.spawn(function()
             local backpack = player:FindFirstChild("Backpack")
             if backpack then
                 for _, item in pairs(backpack:GetChildren()) do
-                    if item:IsA("Tool") and item.Name:lower():find(getgenv().AutoOpenMode:lower()) then
-                        item:Activate()
-                        break
+                    if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
+                        if item:FindFirstChild("Activate") then
+                            item.Activate:Fire()
+                        else
+                            item:Activate()
+                        end
                     end
                 end
             end
@@ -85,58 +87,58 @@ task.spawn(function()
 end)
 
 -- =========================
--- ESP Pet (Highlight)
+-- ESP Egg (Billboard)
 -- =========================
-local function createHighlight(model)
-    if model:FindFirstChild("PetHighlight") then return end
-    if not model:IsA("Model") then return end
-    if not model:FindFirstChild("PetName") then return end
+local function createBillboard(model)
+    if model:FindFirstChild("EggBillboard") then return end
+    local part = model:FindFirstChildWhichIsA("BasePart")
+    if not part then return end
 
-    local hl = Instance.new("Highlight")
-    hl.Name = "PetHighlight"
-    hl.FillColor = Color3.fromRGB(255, 255, 0) -- vàng
-    hl.FillTransparency = 0.7
-    hl.OutlineColor = Color3.fromRGB(255, 0, 0) -- đỏ
-    hl.OutlineTransparency = 0
-    hl.Adornee = model
-    hl.Parent = model
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "EggBillboard"
+    bb.Size = UDim2.new(0, 150, 0, 30)
+    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.AlwaysOnTop = true
+    bb.Parent = part
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.FredokaOne
+    lbl.Text = model.Name .. " • " .. (model:FindFirstChild("PetName") and model.PetName.Value or "???")
+    lbl.TextColor3 = Color3.fromRGB(255,255,0)
+    lbl.TextStrokeTransparency = 0.2
+    lbl.TextScaled = true
+    lbl.Parent = bb
 end
 
-local function enableESP()
-    for _, obj in pairs(Workspace:GetChildren()) do
-        if obj:IsA("Model") and obj:FindFirstChild("PetName") then
-            createHighlight(obj)
-        end
-    end
-    Workspace.ChildAdded:Connect(function(obj)
-        if getgenv().ESP_Enabled and obj:IsA("Model") and obj:FindFirstChild("PetName") then
-            createHighlight(obj)
-        end
-    end)
-end
-
-local function disableESP()
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        local hl = obj:FindFirstChild("PetHighlight")
-        if hl then hl:Destroy() end
-    end
-end
-
+-- Toggle ESP Egg
 MiscTab:Button({
-    Title = "Toggle ESP Pet",
-    Desc = "Highlight all pets with PetName (client-only)",
+    Title = "Toggle ESP Egg",
+    Desc = "Show/hide Egg + Pet overlay (client-only)",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
-        if getgenv().ESP_Enabled then
-            enableESP()
-        else
-            disableESP()
-        end
         WindUI:Notify({
-            Title="ESP Pet",
+            Title="ESP Egg",
             Content=getgenv().ESP_Enabled and "Enabled" or "Disabled",
-            Icon="check",
             Duration=2
         })
     end
 })
+
+-- Update Billboard liên tục
+RunService.RenderStepped:Connect(function()
+    if getgenv().ESP_Enabled then
+        for _, egg in pairs(Workspace:GetDescendants()) do
+            if egg:IsA("Model") and egg:FindFirstChild("PetName") then
+                createBillboard(egg)
+            end
+        end
+    else
+        for _, egg in pairs(Workspace:GetDescendants()) do
+            if egg:IsA("Model") and egg:FindFirstChild("EggBillboard") then
+                egg.EggBillboard:Destroy()
+            end
+        end
+    end
+end)
