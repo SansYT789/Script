@@ -1,46 +1,69 @@
--- 🟣 MangoHub - Key → CheckGame (English Test Version)
+-- ============================
+-- 🟣 MangoHub Full (WindUI + KeySystem + SaveKey + Loader)
+-- ============================
 
 --// Load WindUI
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua")))()
+local WindUI_URL = "https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For-Script-Hacking/refs/heads/main/windui.lua"
+local WindUI = loadstring(game:HttpGet(WindUI_URL))()
 
---// Create Window with KeySystem
-local Window = WindUI:CreateWindow({
+--// Create MangoHub Window
+local localWindow = WindUI:CreateWindow({
     Title = "MangoHub",
-    Icon = "key",
-    Author = ".ftgs",
-    Folder = "MangoHub",
-    Size = UDim2.fromOffset(580, 460),
     Theme = "Dark",
-    Transparent = true,
+    Size = UDim2.fromOffset(400, 300),
+    Position = UDim2.fromScale(0.5, 0.5),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Resizable = true,
 
-    KeySystem = { 
-        Key = { "1234", "5678" }, -- Example keys
-        Note = "Enter the correct key to unlock MangoHub.",
-        SaveKey = true, -- ✅ auto save & load key
-
-        Callback = function(validKey)
-            if validKey then
-                -- Notify user
-                WindUI:Notify({
-                    Title = "MangoHub",
-                    Content = "✅ Key Accepted! Loading Mango-CheckGame...",
-                    Duration = 4,
-                    Icon = "check"
-                })
-
-                -- Destroy key UI
-                Window:Destroy()
-
-                -- Load Mango-CheckGame
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
-            else
-                WindUI:Notify({
-                    Title = "MangoHub",
-                    Content = "❌ Invalid Key. Try again.",
-                    Duration = 4,
-                    Icon = "x"
-                })
-            end
-        end,
-    },
+    -- ✅ KeySystem Config
+    KeySystem = {
+        Key = { "MangoVIP", "RedVIP" },
+        Note = "Enter your VIP key to unlock MangoHub!",
+        SaveKey = true, -- save & auto load key
+        URL = "https://discord.gg/yourlink" -- change to your key link
+    }
 })
+
+--// Main Tab
+local localMainTab = localWindow:CreateTab("Main")
+
+--// Info Label
+localMainTab:CreateLabel("Made by RoyRedRed")
+
+--// Example Toggle
+localMainTab:CreateToggle({
+    Name = "Example Toggle",
+    Default = false,
+    Callback = function(state)
+        print("Toggle state:", state)
+    end
+})
+
+--// Auto loader after key verified
+local function LoadMangoScript()
+    WindUI:Notify({
+        Title = "MangoHub",
+        Content = "✅ Key accepted! Loading Mango-CheckGame...",
+        Duration = 3,
+        Color = Color3.fromRGB(255,165,0)
+    })
+    task.delay(1, function()
+        local success, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
+        end)
+        if not success then
+            warn("MangoHub Loader Error: " .. tostring(err))
+        end
+    end)
+end
+
+--// Detect if key loaded from SaveKey
+task.delay(0.5, function()
+    WindUI:Notify({
+        Title = "MangoHub",
+        Content = "🔑 Key loaded from Save!",
+        Duration = 3,
+        Color = Color3.fromRGB(100, 200, 100)
+    })
+    LoadMangoScript()
+end)
