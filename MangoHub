@@ -1,10 +1,10 @@
 -- =================================
--- 🟣 MangoHub - Automatic + ESP Egg
+-- 🟣 MangoHub - Automatic + ESP Egg (Client-side Visual)
 -- =================================
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-getgenv().ESP_Enabled = false
+getgenv().ESP_Enabled = false -- mặc định tắt
 
 -- Window mobile-friendly
 local Window = WindUI:CreateWindow({
@@ -57,7 +57,7 @@ MainTab:Button({
 })
 
 -- =========================
--- AutoTab (automatic features)
+-- AutoTab (automatic features placeholder)
 -- =========================
 AutoTab:Paragraph({
     Title = "Automatic Features",
@@ -77,7 +77,6 @@ AutoTab:Toggle({
             Icon = "check",
             Duration = 2
         })
-        -- Add auto functionality here
     end
 })
 
@@ -92,7 +91,6 @@ AutoTab:Dropdown({
             Icon = "zap",
             Duration = 2
         })
-        -- Add mode-specific behavior here
     end
 })
 
@@ -125,61 +123,57 @@ ConfigTab:Button({
 })
 
 -- =========================
--- MiscTab (ESP Egg)
+-- MiscTab (ESP Egg visual only)
 -- =========================
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
 local function makeESP(model)
-    if not getgenv().ESP_Enabled or not model:IsA("Model") then return end
+    if not getgenv().ESP_Enabled then return end
+    if not model:IsA("Model") then return end
+    if model:FindFirstChild("PetBillboard") then return end
 
     local part = model:FindFirstChildWhichIsA("BasePart")
     if not part then return end
 
-    local bb = model:FindFirstChild("PetBillboard")
-    if not bb then
-        bb = Instance.new("BillboardGui")
-        bb.Name = "PetBillboard"
-        bb.Size = UDim2.new(0, 200, 0, 40)
-        bb.StudsOffset = Vector3.new(0, 3, 0)
-        bb.AlwaysOnTop = true
-        bb.Parent = part
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "PetBillboard"
+    bb.Size = UDim2.new(0,200,0,40)
+    bb.StudsOffset = Vector3.new(0,3,0)
+    bb.AlwaysOnTop = true
+    bb.Parent = part
 
-        local lbl = Instance.new("TextLabel")
-        lbl.Name = "Label"
-        lbl.Size = UDim2.new(1, 0, 1, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Font = Enum.Font.FredokaOne
-        lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
-        lbl.TextStrokeTransparency = 0.2
-        lbl.TextScaled = true
-        lbl.Parent = bb
-    end
-
-    -- Update text dynamically
-    local label = bb:FindFirstChild("Label")
-    if label then
-        label.Text = (model.Name or "Unknown Egg") .. " • " .. (model:FindFirstChild("PetName") and model.PetName.Value or "???")
-    end
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.FredokaOne
+    label.TextColor3 = Color3.fromRGB(255,255,0)
+    label.TextStrokeTransparency = 0.2
+    label.TextScaled = true
+    label.Text = (model.Name or "Unknown Egg").." • "..(model:FindFirstChild("PetName") and model.PetName.Value or "???")
+    label.Parent = bb
 end
 
--- Toggle ESP via button
+-- Toggle ESP button
 MiscTab:Button({
     Title = "Toggle ESP Egg",
-    Desc = "Show real pet names inside eggs",
+    Desc = "Show real pet names inside eggs (visual only)",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
         if not getgenv().ESP_Enabled then
-            for _, bb in pairs(game.Workspace:GetDescendants()) do
-                if bb:IsA("BillboardGui") and bb.Name == "PetBillboard" then
-                    bb:Destroy()
+            for _, gui in pairs(Workspace:GetDescendants()) do
+                if gui:IsA("BillboardGui") and gui.Name == "PetBillboard" then
+                    gui:Destroy()
                 end
             end
         end
     end
 })
 
--- Keep ESP updated
-game:GetService("RunService").RenderStepped:Connect(function()
+-- RenderStepped: update ESP continuously
+RunService.RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
-        for _, egg in pairs(game.Workspace:GetDescendants()) do
+        for _, egg in pairs(Workspace:GetDescendants()) do
             if egg:IsA("Model") and egg:FindFirstChild("PetName") then
                 makeESP(egg)
             end
