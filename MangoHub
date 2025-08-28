@@ -1,49 +1,81 @@
 -- =================================
--- 🟣 MangoHub - Full Pack (Main + Misc + ESP Egg Fixed)
+-- 🟣 MangoHub - Full WindUI + Auto Click Seed Pack/Chest + ESP Pet (Highlight)
 -- =================================
 
---// Load WindUI
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
 
---// Make Window
-local MainWindow = WindUI:MakeWindow({
-    Title = "🍀 MangoHub",
-    SubTitle = "Auto + ESP",
-    SaveFolder = "MangoHubConfig"
+-- =========================
+-- Load WindUI
+-- =========================
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+getgenv().ESP_Enabled = false
+getgenv().AutoClickSeedPack = false
+getgenv().AutoOpenMode = "None"
+
+-- =========================
+-- Create Window
+-- =========================
+local Window = WindUI:CreateWindow({
+    Title = "MangoHub",
+    Author = "Made By Group Vinreach",
+    Folder = "Mango",
+    Size = UDim2.fromOffset(320, 360),
+    Theme = "Dark"
 })
 
---// Tabs
-local MainTab = MainWindow:Tab({ Title = "Main", Icon = "house" })
-local MiscTab = MainWindow:Tab({ Title = "Misc", Icon = "sparkles" })
+-- =========================
+-- Sections & Tabs
+-- =========================
+local MainSection = Window:Section({ Title = "Main Features", Opened = true })
+local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
--- =================================
--- AUTO OPEN SEED PACK / CHEST
--- =================================
-getgenv().AutoOpenMode = "None"
-getgenv().AutoOpenEnabled = false
+local AutoTab = MainSection:Tab({ Title = "Automatic" })
+local MiscTab = MiscSection:Tab({ Title = "ESP Pet" })
 
-MainTab:CreateToggle("Auto Open Seed Pack", function(state)
-    getgenv().AutoOpenEnabled = state
-end, false)
+-- =========================
+-- Automatic Tab
+-- =========================
+AutoTab:Toggle({
+    Title = "Auto Click Seed Pack",
+    Desc = "Automatically click items when enabled",
+    Value = false,
+    Callback = function(state)
+        getgenv().AutoClickSeedPack = state
+        WindUI:Notify({
+            Title="Auto Click Seed Pack",
+            Content=state and "Enabled!" or "Disabled!",
+            Icon="check",
+            Duration=2
+        })
+    end
+})
 
-MainTab:CreateDropdown("Select Mode Open", { "None", "Seed pack", "Chest" }, function(val)
-    getgenv().AutoOpenMode = val
-end, "None")
+AutoTab:Dropdown({
+    Title = "Select mode open",
+    Desc = "Choose which item to auto click",
+    Values = {"None", "Seed Pack", "Chest"},
+    Callback = function(val)
+        getgenv().AutoOpenMode = val
+        WindUI:Notify({
+            Title="Automatic Mode",
+            Content="Selected: "..val,
+            Icon="zap",
+            Duration=2
+        })
+    end
+})
 
--- Auto open loop
+-- Auto loop click
 task.spawn(function()
-    while task.wait(1) do
-        if getgenv().AutoOpenEnabled and getgenv().AutoOpenMode ~= "None" then
-            local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+    while task.wait(0.5) do
+        if getgenv().AutoClickSeedPack and getgenv().AutoOpenMode ~= "None" then
+            local backpack = player:FindFirstChild("Backpack")
             if backpack then
                 for _, item in pairs(backpack:GetChildren()) do
-                    if getgenv().AutoOpenMode == "Seed pack" and string.find(item.Name:lower(), "seed") then
-                        game:GetService("Players").LocalPlayer.Character.Humanoid:EquipTool(item)
-                        mouse1click()
-                        break
-                    elseif getgenv().AutoOpenMode == "Chest" and string.find(item.Name:lower(), "chest") then
-                        game:GetService("Players").LocalPlayer.Character.Humanoid:EquipTool(item)
-                        mouse1click()
+                    if item:IsA("Tool") and item.Name:lower():find(getgenv().AutoOpenMode:lower()) then
+                        item:Activate()
                         break
                     end
                 end
@@ -52,52 +84,59 @@ task.spawn(function()
     end
 end)
 
--- =================================
--- ESP EGG (Highlight, ko spam, nhẹ máy)
--- =================================
-getgenv().ESP_Enabled = false
-
-local function makeESPEgg(model)
-    if not getgenv().ESP_Enabled then return end
+-- =========================
+-- ESP Pet (Highlight)
+-- =========================
+local function createHighlight(model)
     if model:FindFirstChild("PetHighlight") then return end
-    if not model:IsA("Model") or not model:FindFirstChild("PetName") then return end
+    if not model:IsA("Model") then return end
+    if not model:FindFirstChild("PetName") then return end
 
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "PetHighlight"
-    highlight.FillColor = Color3.fromRGB(255, 255, 0) -- vàng
-    highlight.FillTransparency = 0.7
-    highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- đỏ
-    highlight.OutlineTransparency = 0
-    highlight.Adornee = model
-    highlight.Parent = model
+    local hl = Instance.new("Highlight")
+    hl.Name = "PetHighlight"
+    hl.FillColor = Color3.fromRGB(255, 255, 0) -- vàng
+    hl.FillTransparency = 0.7
+    hl.OutlineColor = Color3.fromRGB(255, 0, 0) -- đỏ
+    hl.OutlineTransparency = 0
+    hl.Adornee = model
+    hl.Parent = model
 end
 
-local function scanAllEggs()
-    for _, egg in pairs(workspace:GetChildren()) do
-        if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-            makeESPEgg(egg)
+local function enableESP()
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if obj:IsA("Model") and obj:FindFirstChild("PetName") then
+            createHighlight(obj)
         end
+    end
+    Workspace.ChildAdded:Connect(function(obj)
+        if getgenv().ESP_Enabled and obj:IsA("Model") and obj:FindFirstChild("PetName") then
+            createHighlight(obj)
+        end
+    end)
+end
+
+local function disableESP()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        local hl = obj:FindFirstChild("PetHighlight")
+        if hl then hl:Destroy() end
     end
 end
 
-workspace.ChildAdded:Connect(function(obj)
-    if getgenv().ESP_Enabled and obj:IsA("Model") and obj:FindFirstChild("PetName") then
-        makeESPEgg(obj)
-    end
-end)
-
-MiscTab:CreateToggle("ESP Egg", function(state)
-    getgenv().ESP_Enabled = state
-    if state then
-        scanAllEggs()
-    else
-        for _, egg in pairs(workspace:GetChildren()) do
-            local hl = egg:FindFirstChild("PetHighlight")
-            if hl then hl:Destroy() end
+MiscTab:Button({
+    Title = "Toggle ESP Pet",
+    Desc = "Highlight all pets with PetName (client-only)",
+    Callback = function()
+        getgenv().ESP_Enabled = not getgenv().ESP_Enabled
+        if getgenv().ESP_Enabled then
+            enableESP()
+        else
+            disableESP()
         end
+        WindUI:Notify({
+            Title="ESP Pet",
+            Content=getgenv().ESP_Enabled and "Enabled" or "Disabled",
+            Icon="check",
+            Duration=2
+        })
     end
-end, false)
-
--- =================================
--- Done
--- =================================
+})
