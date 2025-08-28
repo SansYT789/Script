@@ -1,23 +1,20 @@
 -- =================================
--- 🟣 MangoHub - Anti AFK + ESP Egg
+-- 🟣 MangoHub - Automatic + ESP Egg
 -- =================================
 
 --// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 --// Global vars
-getgenv().AntiAFK_Mode = "auto"
-getgenv().AntiAFK_Enabled = false
-getgenv().AntiAFK_Connection = nil
 getgenv().ESP_Enabled = false
 
---// Window
+--// Window (mobile-friendly size)
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Icon = "shield",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
-    Size = UDim2.fromOffset(450, 400),
+    Size = UDim2.fromOffset(320, 360),
     Theme = "Dark"
 })
 
@@ -27,58 +24,34 @@ local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
 --// Tabs
-local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })
-local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" })
+local MainTab = MainSection:Tab({ Title = "Automatic", Icon = "house" })
+local AutoTab = MainSection:Tab({ Title = "Auto Settings", Icon = "mouse-pointer-click" })
 local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
 local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 
 -- =========================
--- Main Tab
+-- Main Tab (Automatic)
 -- =========================
 MainTab:Paragraph({
-    Title = "Anti AFK",
-    Desc = "Prevent being kicked for idling",
-    Image = "shield",
+    Title = "Automatic Features",
+    Desc = "Enable automatic game functions here",
+    Image = "zap",
     Color = Color3.fromHex("#00ffcc")
 })
 
+-- Ví dụ toggle auto (tuỳ game mà thêm tính năng)
 MainTab:Toggle({
-    Title = "Enable Anti AFK",
-    Desc = "Turn Anti AFK on or off",
+    Title = "Enable Auto Stuff",
+    Desc = "Turn automatic features on/off",
     Value = false,
     Callback = function(state)
-        getgenv().AntiAFK_Enabled = state
-
-        if state then
-            if getgenv().AntiAFK_Connection then getgenv().AntiAFK_Connection:Disconnect() end
-            local vu = game:GetService("VirtualUser")
-            getgenv().AntiAFK_Connection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
-                if getgenv().AntiAFK_Mode == "auto" then
-                    vu:CaptureController()
-                    vu:ClickButton2(Vector2.new())
-                elseif getgenv().AntiAFK_Mode == "jump" then
-                    local char = game.Players.LocalPlayer.Character
-                    if char and char:FindFirstChild("Humanoid") then
-                        char.Humanoid.Jump = true
-                    end
-                end
-            end)
-
-            WindUI:Notify({
-                Title = "Anti AFK",
-                Content = "Enabled successfully!",
-                Icon = "check",
-                Duration = 3
-            })
-        else
-            if getgenv().AntiAFK_Connection then getgenv().AntiAFK_Connection:Disconnect() end
-            WindUI:Notify({
-                Title = "Anti AFK",
-                Content = "Disabled!",
-                Icon = "x",
-                Duration = 3
-            })
-        end
+        -- đây là nơi bạn xử lý auto logic
+        WindUI:Notify({
+            Title = "Automatic",
+            Content = state and "Enabled!" or "Disabled!",
+            Icon = "check",
+            Duration = 2
+        })
     end
 })
 
@@ -86,23 +59,23 @@ MainTab:Toggle({
 -- Auto Tab
 -- =========================
 AutoTab:Paragraph({
-    Title = "Automatic Mode",
-    Desc = "Choose how the Anti AFK works",
+    Title = "Automatic Settings",
+    Desc = "Adjust how automatic features work",
     Image = "zap",
     Color = Color3.fromHex("#ffaa00")
 })
 
+-- Auto settings dropdown ví dụ
 AutoTab:Dropdown({
-    Title = "Anti AFK Mode",
-    Desc = "Select AFK method",
-    Values = {"auto","jump"},
+    Title = "Mode",
+    Desc = "Select auto mode",
+    Values = {"Mode1","Mode2"},
     Callback = function(val)
-        getgenv().AntiAFK_Mode = val
         WindUI:Notify({
-            Title = "Anti AFK Mode",
-            Content = "Changed to: "..val,
+            Title = "Automatic Mode",
+            Content = "Selected: "..val,
             Icon = "zap",
-            Duration = 3
+            Duration = 2
         })
     end
 })
@@ -126,7 +99,7 @@ ConfigTab:Button({
             Title = "Config",
             Content = "Saved successfully!",
             Icon = "check",
-            Duration = 3
+            Duration = 2
         })
     end
 })
@@ -140,7 +113,7 @@ ConfigTab:Button({
             Title = "Config",
             Content = "Deleted successfully!",
             Icon = "trash",
-            Duration = 3
+            Duration = 2
         })
     end
 })
@@ -164,18 +137,20 @@ local function makeESP(model)
 
     local bb = Instance.new("BillboardGui")
     bb.Name = "PetBillboard"
-    bb.Size = UDim2.new(0, 200, 0, 40)
-    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.Size = UDim2.new(0, 150, 0, 30)
+    bb.StudsOffset = Vector3.new(0, 2.5, 0)
     bb.AlwaysOnTop = true
     bb.Parent = part
 
-    local lbl = Instance.new("TextLabel", bb)
+    local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, 0, 1, 0)
     lbl.BackgroundTransparency = 1
     lbl.Font = Enum.Font.FredokaOne
     lbl.Text = "🥚 " .. getPetName(model)
     lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
     lbl.TextStrokeTransparency = 0.2
+    lbl.TextScaled = true
+    lbl.Parent = bb
 end
 
 MiscTab:Button({
