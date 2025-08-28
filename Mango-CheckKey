@@ -23,5 +23,5 @@ local Loader = WindUI:CreateWindow({
 Loader.OnSuccess = function()
     Loader:Destroy() -- xoá UI nhập key ngay lập tức
     -- Load MangoHub chính
-    loadstring(game:HttpGet("https://pastebin.com/raw/"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
 end
