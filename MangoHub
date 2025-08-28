@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Full Pack (Anti AFK + ESP Client Visual)
+-- 🟣 MangoHub - Full Pack (Anti AFK + ESP Visual Client)
 -- =================================
 
 --// Load WindUI
@@ -12,19 +12,35 @@ getgenv().AntiAFK_Connection = nil
 
 --// ESP Settings
 local ESPEnabled = false
-local truePetMap = {}
 local ESPFrames = {}
 
---// Load Pet GUI (Client Visual Only)
+--// Load Pet GUI (Visual Client Only)
 local G2L = require(path_to_ui_file) -- Thay bằng đường dẫn tới UiPet script của bạn
 local ScreenGui = G2L
 ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") -- Chỉ client thấy
 
---// Helper Functions
+--// Helper Services
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
+--// Safe function lấy vị trí egg, tránh crash khi không có PrimaryPart
+local function getEggPosition(eggModel)
+    local sum = Vector3.new(0,0,0)
+    local count = 0
+    for _, p in pairs(eggModel:GetDescendants()) do
+        if p:IsA("BasePart") then
+            sum = sum + p.Position
+            count = count + 1
+        end
+    end
+    if count == 0 then
+        return eggModel:GetModelCFrame().Position -- fallback safe
+    end
+    return sum / count
+end
+
+--// Lấy tên pet
 local function getRealPetName(eggModel)
     local val = eggModel:FindFirstChild("PetName")
     if val and val:IsA("StringValue") then
@@ -33,7 +49,7 @@ local function getRealPetName(eggModel)
     return "Unknown"
 end
 
--- Auto detect tất cả egg hiện có trong workspace
+--// Lấy egg gần player trong radius
 local function getPlayerGardenEggs(radius)
     local eggs = {}
     local char = player.Character or player.CharacterAdded:Wait()
@@ -42,9 +58,8 @@ local function getPlayerGardenEggs(radius)
 
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") and obj:FindFirstChild("PetName") then
-            local dist = (obj:GetPivot().Position - root.Position).Magnitude
+            local dist = (getEggPosition(obj) - root.Position).Magnitude
             if dist <= (radius or 60) then
-                truePetMap[obj] = getRealPetName(obj)
                 table.insert(eggs, obj)
             end
         end
@@ -52,25 +67,23 @@ local function getPlayerGardenEggs(radius)
     return eggs
 end
 
---// Apply ESP Frame
+--// Apply ESP GUI
 local function applyEggESP(egg)
-    if ESPFrames[egg] then return end
-    if not ESPEnabled then return end
+    if ESPFrames[egg] or not ESPEnabled then return end
 
     local clone = ScreenGui.UiPet:Clone()
     clone.NameEgg.Text = egg.Name
     clone.NamePet.Text = getRealPetName(egg)
-    clone.NamePet.Visible = true
     clone.Parent = ScreenGui
     ESPFrames[egg] = clone
 
     spawn(function()
+        local cam = Workspace.CurrentCamera
         while clone.Parent and ESPEnabled and egg.Parent do
-            local cam = Workspace.CurrentCamera
-            local pos, onScreen = cam:WorldToViewportPoint(egg:GetPivot().Position)
+            local pos, onScreen = cam:WorldToViewportPoint(getEggPosition(egg))
             clone.Position = UDim2.new(0, pos.X, 0, pos.Y)
             clone.Visible = onScreen
-            clone.NamePet.Text = getRealPetName(egg)
+            clone.NamePet.Text = getRealPetName(egg) -- update realtime
             task.wait(0.03)
         end
         if clone.Parent then clone:Destroy() end
@@ -78,7 +91,7 @@ local function applyEggESP(egg)
     end)
 end
 
---// Auto detect egg mới spawn & remove khi biến mất
+--// Auto detect egg mới spawn/remove
 Workspace.DescendantAdded:Connect(function(obj)
     if ESPEnabled and obj:IsA("Model") and obj:FindFirstChild("PetName") then
         applyEggESP(obj)
@@ -101,19 +114,18 @@ local Window = WindUI:CreateWindow({
     Theme = "Dark"
 })
 
---// Sections
+--// Sections & Tabs
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 local ESPSection = Window:Section({ Title = "Misc", Opened = true })
 
---// Tabs
-local MainTab = MainSection:Tab({ Title = "Main", Icon = "home", Desc = "Main information and links" })
-local AntiAFKTab = MainSection:Tab({ Title = "Anti AFK", Icon = "shield", Desc = "Prevent getting kicked for AFK" })
-local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings", Desc = "UI and system settings" })
-local ESPTab = ESPSection:Tab({ Title = "ESP", Icon = "eye", Desc = "ESP for Garden Eggs" })
+local MainTab = MainSection:Tab({ Title = "Main", Icon = "home", Desc = "Main info & links" })
+local AntiAFKTab = MainSection:Tab({ Title = "Anti AFK", Icon = "shield", Desc = "Prevent AFK kick" })
+local ConfigTab = SettingsSection:Tab({ Title = "Config", Icon = "settings", Desc = "UI settings" })
+local ESPTab = ESPSection:Tab({ Title = "ESP", Icon = "eye", Desc = "ESP Eggs + Pet Name" })
 
 --// Main Tab
-MainTab:Paragraph({ Title = "Version: 1.0 [ Demo ]", Desc = "MangoHub - Made By Group Vinreach", Image = "info", ImageSize = 18, Color = Color3.fromHex("#30ff6a") })
+MainTab:Paragraph({ Title = "Version: 1.0 [ Demo ]", Desc = "MangoHub - Visual ESP Only", Image = "info", ImageSize = 18, Color = Color3.fromHex("#30ff6a") })
 MainTab:Divider()
 MainTab:Button({
     Title = "Join Discord",
@@ -121,10 +133,10 @@ MainTab:Button({
     Variant = "Primary",
     Callback = function()
         setclipboard("https://discord.gg/vinreach")
-        WindUI:Notify({ Title = "Discord Link Copied!", Content = "Paste the link in your browser to join our Discord server", Icon = "clipboard", Duration = 4 })
+        WindUI:Notify({ Title = "Discord Link Copied!", Content = "Paste link in browser", Icon = "clipboard", Duration = 4 })
     end
 })
-MainTab:Paragraph({ Title = "Features", Desc = "• Anti AFK System\n• Multiple Detection Modes\n• Auto Random Actions\n• Easy Configuration\n• ESP Eggs + Pet Name (Visual Only)", Image = "list", ImageSize = 16, Color = Color3.fromHex("#667eea") })
+MainTab:Paragraph({ Title = "Features", Desc = "• Anti AFK\n• Multiple Modes\n• ESP Eggs + Pet Name (Client Visual Only)\n• Auto detect spawn/remove\n• Real-time update", Image = "list", ImageSize = 16, Color = Color3.fromHex("#667eea") })
 
 --// Anti AFK Tab
 AntiAFKTab:Button({
@@ -134,7 +146,7 @@ AntiAFKTab:Button({
     Callback = function()
         getgenv().AntiAFK_Enabled = not getgenv().AntiAFK_Enabled
         local status = getgenv().AntiAFK_Enabled
-        WindUI:Notify({ Title = "Anti AFK", Content = status and "Anti AFK Enabled!" or "Anti AFK Disabled!", Icon = status and "check" or "x", Duration = 3 })
+        WindUI:Notify({ Title = "Anti AFK", Content = status and "Enabled" or "Disabled", Icon = status and "check" or "x", Duration = 3 })
         print("✅ Anti AFK: " .. tostring(status))
 
         if status then
@@ -150,8 +162,8 @@ AntiAFKTab:Button({
                 if not getgenv().AntiAFK_Enabled then return end
                 local mode = getgenv().AntiAFK_Mode
                 if mode == "auto" then
-                    local modes = {"click", "jump", "rotate"}
-                    mode = modes[math.random(1, #modes)]
+                    local modes = {"click","jump","rotate"}
+                    mode = modes[math.random(1,#modes)]
                 end
 
                 if mode == "click" then
@@ -161,7 +173,7 @@ AntiAFKTab:Button({
                     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
                     if humanoid then humanoid.Jump = true end
                 elseif mode == "rotate" then
-                    if Camera then Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(30), 0) end
+                    if Camera then Camera.CFrame = Camera.CFrame * CFrame.Angles(0,math.rad(30),0) end
                 end
             end)
         else
@@ -176,12 +188,12 @@ AntiAFKTab:Button({
 --// Config Tab
 ConfigTab:Paragraph({ Title = "UI Customization", Desc = "Adjust interface settings", Image = "palette", ImageSize = 16, Color = Color3.fromHex("#667eea") })
 ConfigTab:Dropdown({
-    Title = "Select Theme",
+    Title = "Theme",
     Values = {"Dark","Light"},
     Value = "Dark",
     Callback = function(theme)
         WindUI:SetTheme(theme)
-        WindUI:Notify({ Title = "Theme Changed", Content = "Switched to " .. theme .. " theme", Icon = "palette", Duration = 2 })
+        WindUI:Notify({ Title = "Theme Changed", Content = "Switched to "..theme, Icon = "palette", Duration = 2 })
     end
 })
 ConfigTab:Toggle({
@@ -189,14 +201,14 @@ ConfigTab:Toggle({
     Desc = "Enable system notifications",
     Value = true,
     Callback = function(state)
-        WindUI:Notify({ Title = "Notifications", Content = state and "Notifications enabled" or "Notifications disabled", Duration = 2 })
+        WindUI:Notify({ Title = "Notifications", Content = state and "Enabled" or "Disabled", Duration = 2 })
     end
 })
 
 --// ESP Tab
 ESPTab:Toggle({
     Title = "ESP Eggs + Pet Name",
-    Desc = "Show nearby garden eggs and their pet names (Visual Only)",
+    Desc = "Show nearby garden eggs and their pet names (Client Visual Only)",
     Value = false,
     Callback = function(state)
         ESPEnabled = state
@@ -214,7 +226,7 @@ ESPTab:Toggle({
 })
 
 --// Startup notification
-WindUI:Notify({ Title = "MangoHub Loaded!", Content = "Anti AFK & ESP ready (Visual Only)", Icon = "check-circle", Duration = 3 })
+WindUI:Notify({ Title = "MangoHub Loaded!", Content = "Anti AFK & ESP ready (Client Visual)", Icon = "check-circle", Duration = 3 })
 
 --// Cleanup on close
 Window:OnClose(function()
@@ -222,10 +234,3 @@ Window:OnClose(function()
         getgenv().AntiAFK_Connection:Disconnect()
         getgenv().AntiAFK_Connection = nil
     end
-    getgenv().AntiAFK_Enabled = false
-
-    for _, frame in pairs(ESPFrames) do
-        if frame.Parent then frame:Destroy() end
-    end
-    ESPFrames = {}
-end)
