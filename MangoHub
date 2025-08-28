@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Full WindUI + Auto Open Seed Pack/Chest (light) + ESP Egg
+-- 🟣 MangoHub - Full WindUI + Auto Click Seed Pack/Chest + ESP Egg
 -- =================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local player = Players.LocalPlayer
 -- =========================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 getgenv().ESP_Enabled = false
-getgenv().AutoOpenSeedPack = false
+getgenv().AutoClickSeedPack = false
 getgenv().AutoOpenMode = "None"
 
 -- =========================
@@ -66,20 +66,20 @@ MainTab:Button({
 -- =========================
 AutoTab:Paragraph({
     Title = "Automatic Features",
-    Desc = "Automatically open items based on selected mode",
+    Desc = "Automatically click items based on selected mode",
     Image = "zap",
     Color = Color3.fromHex("#ffaa00")
 })
 
--- Switch Auto Open Seed Pack
+-- Switch Auto Click Seed Pack
 AutoTab:Toggle({
-    Title = "Auto Open Seed Pack",
-    Desc = "Automatically open items when enabled",
+    Title = "Auto Click Seed Pack",
+    Desc = "Automatically click items when enabled",
     Value = false,
     Callback = function(state)
-        getgenv().AutoOpenSeedPack = state
+        getgenv().AutoClickSeedPack = state
         WindUI:Notify({
-            Title="Auto Open Seed Pack",
+            Title="Auto Click Seed Pack",
             Content=state and "Enabled!" or "Disabled!",
             Icon="check",
             Duration=2
@@ -90,7 +90,7 @@ AutoTab:Toggle({
 -- Dropdown Select Mode Open: None / Seed Pack / Chest
 AutoTab:Dropdown({
     Title = "Select mode open",
-    Desc = "Choose which item to auto open",
+    Desc = "Choose which item to auto click",
     Values = {"None", "Seed Pack", "Chest"},
     Callback = function(val)
         getgenv().AutoOpenMode = val
@@ -103,16 +103,16 @@ AutoTab:Dropdown({
     end
 })
 
--- Auto loop nhẹ nhàng (0.5s check 1 lần)
+-- Auto loop click nhẹ nhàng (0.5s check 1 lần)
 spawn(function()
     while true do
         wait(0.5)
-        if getgenv().AutoOpenSeedPack and getgenv().AutoOpenMode ~= "None" then
+        if getgenv().AutoClickSeedPack and getgenv().AutoOpenMode ~= "None" then
             local backpack = player:FindFirstChild("Backpack")
             if backpack then
                 for _, item in pairs(backpack:GetChildren()) do
                     if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
-                        player.Character.Humanoid:EquipTool(item)
+                        -- Auto click item
                         if item:FindFirstChild("Activate") then
                             item.Activate:Fire()
                         elseif item:IsA("Tool") then
