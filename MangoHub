@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Full Visual Egg UI + WindUI
+-- 🟣 MangoHub - Full WindUI + Automatic + Egg Visual + Auto Open Seed Pack
 -- =================================
 
 local Players = game:GetService("Players")
@@ -12,8 +12,7 @@ local player = Players.LocalPlayer
 -- Load WindUI
 -- =========================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
-
-getgenv().ESP_Enabled = false -- toggle ESP
+getgenv().ESP_Enabled = false
 
 -- =========================
 -- Create Window
@@ -27,16 +26,21 @@ local Window = WindUI:CreateWindow({
     Theme = "Dark"
 })
 
+-- =========================
 -- Sections
+-- =========================
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local MiscSection = Window:Section({ Title = "ESP", Opened = true })
 
+-- =========================
 -- Tabs
-local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" }) -- <-- Đổi tên Automatic -> Main
-local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })
+-- =========================
+local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })        -- info/update
+local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" }) -- auto settings
+local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })    -- toggle overlay
 
 -- =========================
--- MainTab content placeholder
+-- MainTab content
 -- =========================
 MainTab:Paragraph({
     Title = "Visual Egg UI",
@@ -45,8 +49,75 @@ MainTab:Paragraph({
     Color = Color3.fromHex("#00ffcc")
 })
 
+MainTab:Button({
+    Title = "Join Discord",
+    Desc = "Click to join our Discord server",
+    Callback = function()
+        local url = "https://discord.gg/yourserver"
+        if syn and syn.request then
+            syn.request({Url = url, Method = "GET"})
+        else
+            setclipboard(url)
+            WindUI:Notify({Title="Discord", Content="Link copied!", Icon="check", Duration=2})
+        end
+    end
+})
+
 -- =========================
--- Create ScreenGui overlay
+-- AutoTab content
+-- =========================
+AutoTab:Paragraph({
+    Title = "Automatic Features",
+    Desc = "Enable automatic game functions here",
+    Image = "zap",
+    Color = Color3.fromHex("#ffaa00")
+})
+
+AutoTab:Toggle({
+    Title = "Enable Auto Stuff",
+    Desc = "Turn automatic features on/off",
+    Value = false,
+    Callback = function(state)
+        WindUI:Notify({Title="Automatic", Content=state and "Enabled!" or "Disabled!", Icon="check", Duration=2})
+    end
+})
+
+AutoTab:Dropdown({
+    Title = "Mode",
+    Desc = "Select auto mode",
+    Values = {"Mode1","Mode2"},
+    Callback = function(val)
+        WindUI:Notify({Title="Automatic Mode", Content="Selected: "..val, Icon="zap", Duration=2})
+    end
+})
+
+-- =========================
+-- Auto Open Seed Pack Button
+-- =========================
+AutoTab:Button({
+    Title = "Auto Open Seed Pack",
+    Desc = "Automatically open Chest/Pack items from inventory",
+    Callback = function()
+        local backpack = player:WaitForChild("Backpack")
+        for _, item in pairs(backpack:GetChildren()) do
+            if item:IsA("Tool") and (item.Name:match("Chest") or item.Name:match("Pack")) then
+                -- cầm item
+                player.Character.Humanoid:EquipTool(item)
+                -- kích hoạt item
+                if item:FindFirstChild("Activate") then
+                    item.Activate:Fire()
+                elseif item:IsA("Tool") then
+                    item:Activate()
+                end
+                WindUI:Notify({Title="Auto Open", Content="Opened "..item.Name, Icon="check", Duration=2})
+                break
+            end
+        end
+    end
+})
+
+-- =========================
+-- Create ScreenGui overlay (Egg Visual)
 -- =========================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "EggOverlayUI"
@@ -98,7 +169,7 @@ NamePet.TextXAlignment = Enum.TextXAlignment.Left
 NamePet.Parent = UiPet
 
 -- =========================
--- MiscTab: Toggle Egg Visual
+-- MiscTab content: Toggle ESP
 -- =========================
 MiscTab:Button({
     Title = "Toggle Egg Visual",
@@ -106,12 +177,7 @@ MiscTab:Button({
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
         ScreenGui.Enabled = getgenv().ESP_Enabled
-        WindUI:Notify({
-            Title = "Egg Visual",
-            Content = getgenv().ESP_Enabled and "Enabled" or "Disabled",
-            Icon = "check",
-            Duration = 2
-        })
+        WindUI:Notify({Title="Egg Visual", Content=getgenv().ESP_Enabled and "Enabled" or "Disabled", Icon="check", Duration=2})
     end
 })
 
@@ -124,7 +190,7 @@ RunService.RenderStepped:Connect(function()
             if egg:IsA("Model") and egg:FindFirstChild("PetName") then
                 NameEgg.Text = egg.Name
                 NamePet.Text = egg.PetName.Value
-                break -- chỉ show first egg, tuỳ chỉnh nếu muốn nhiều
+                break -- chỉ show first egg
             end
         end
     end
