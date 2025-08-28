@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Full Pack (Anti AFK + ESP)
+-- 🟣 MangoHub - Full Pack (Anti AFK + ESP Client Visual)
 -- =================================
 
 --// Load WindUI
@@ -15,10 +15,10 @@ local ESPEnabled = false
 local truePetMap = {}
 local ESPFrames = {}
 
---// Load Pet GUI
+--// Load Pet GUI (Client Visual Only)
 local G2L = require(path_to_ui_file) -- Thay bằng đường dẫn tới UiPet script của bạn
 local ScreenGui = G2L
-ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") -- Chỉ client thấy
 
 --// Helper Functions
 local Players = game:GetService("Players")
@@ -33,14 +33,7 @@ local function getRealPetName(eggModel)
     return "Unknown"
 end
 
--- Nếu muốn auto detect tất cả egg hiện tại, bỏ qua khai báo cứng
-local petTable = {} 
-for _, obj in pairs(Workspace:GetDescendants()) do
-    if obj:IsA("Model") and obj:FindFirstChild("PetName") then
-        petTable[obj.Name] = true
-    end
-end
-
+-- Auto detect tất cả egg hiện có trong workspace
 local function getPlayerGardenEggs(radius)
     local eggs = {}
     local char = player.Character or player.CharacterAdded:Wait()
@@ -48,11 +41,10 @@ local function getPlayerGardenEggs(radius)
     if not root then return eggs end
 
     for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and petTable[obj.Name] then
+        if obj:IsA("Model") and obj:FindFirstChild("PetName") then
             local dist = (obj:GetPivot().Position - root.Position).Magnitude
             if dist <= (radius or 60) then
-                local realPet = getRealPetName(obj)
-                truePetMap[obj] = realPet
+                truePetMap[obj] = getRealPetName(obj)
                 table.insert(eggs, obj)
             end
         end
@@ -66,8 +58,8 @@ local function applyEggESP(egg)
     if not ESPEnabled then return end
 
     local clone = ScreenGui.UiPet:Clone()
-    clone.NameEgg.Text = egg.Name            -- tên egg
-    clone.NamePet.Text = getRealPetName(egg) -- tên pet
+    clone.NameEgg.Text = egg.Name
+    clone.NamePet.Text = getRealPetName(egg)
     clone.NamePet.Visible = true
     clone.Parent = ScreenGui
     ESPFrames[egg] = clone
@@ -78,13 +70,26 @@ local function applyEggESP(egg)
             local pos, onScreen = cam:WorldToViewportPoint(egg:GetPivot().Position)
             clone.Position = UDim2.new(0, pos.X, 0, pos.Y)
             clone.Visible = onScreen
-            clone.NamePet.Text = getRealPetName(egg) -- auto update tên pet
+            clone.NamePet.Text = getRealPetName(egg)
             task.wait(0.03)
         end
         if clone.Parent then clone:Destroy() end
         ESPFrames[egg] = nil
     end)
 end
+
+--// Auto detect egg mới spawn & remove khi biến mất
+Workspace.DescendantAdded:Connect(function(obj)
+    if ESPEnabled and obj:IsA("Model") and obj:FindFirstChild("PetName") then
+        applyEggESP(obj)
+    end
+end)
+Workspace.DescendantRemoving:Connect(function(obj)
+    if ESPFrames[obj] then
+        ESPFrames[obj]:Destroy()
+        ESPFrames[obj] = nil
+    end
+end)
 
 --// Main Window
 local Window = WindUI:CreateWindow({
@@ -119,7 +124,7 @@ MainTab:Button({
         WindUI:Notify({ Title = "Discord Link Copied!", Content = "Paste the link in your browser to join our Discord server", Icon = "clipboard", Duration = 4 })
     end
 })
-MainTab:Paragraph({ Title = "Features", Desc = "• Anti AFK System\n• Multiple Detection Modes\n• Auto Random Actions\n• Easy Configuration\n• ESP Eggs + Pet Name", Image = "list", ImageSize = 16, Color = Color3.fromHex("#667eea") })
+MainTab:Paragraph({ Title = "Features", Desc = "• Anti AFK System\n• Multiple Detection Modes\n• Auto Random Actions\n• Easy Configuration\n• ESP Eggs + Pet Name (Visual Only)", Image = "list", ImageSize = 16, Color = Color3.fromHex("#667eea") })
 
 --// Anti AFK Tab
 AntiAFKTab:Button({
@@ -191,7 +196,7 @@ ConfigTab:Toggle({
 --// ESP Tab
 ESPTab:Toggle({
     Title = "ESP Eggs + Pet Name",
-    Desc = "Show nearby garden eggs and their pet names",
+    Desc = "Show nearby garden eggs and their pet names (Visual Only)",
     Value = false,
     Callback = function(state)
         ESPEnabled = state
@@ -209,7 +214,7 @@ ESPTab:Toggle({
 })
 
 --// Startup notification
-WindUI:Notify({ Title = "MangoHub Loaded!", Content = "Anti AFK & ESP ready", Icon = "check-circle", Duration = 3 })
+WindUI:Notify({ Title = "MangoHub Loaded!", Content = "Anti AFK & ESP ready (Visual Only)", Icon = "check-circle", Duration = 3 })
 
 --// Cleanup on close
 Window:OnClose(function()
