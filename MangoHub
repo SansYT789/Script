@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Anti AFK + ESP Pets & Eggs
+-- 🟣 MangoHub - Anti AFK + ESP Pets v1.1 Demo
 -- =================================
 
 --// Load WindUI
@@ -9,8 +9,7 @@ local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footag
 getgenv().AntiAFK_Mode = "auto"
 getgenv().AntiAFK_Enabled = false
 getgenv().AntiAFK_Connection = nil
-getgenv().EggESP_Enabled = false
-getgenv().PetESP_Enabled = false
+getgenv().ESP_Enabled = false
 
 --// Window
 local Window = WindUI:CreateWindow({
@@ -33,14 +32,24 @@ local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-cli
 local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
 local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 
+local ws = game.Workspace
+local espMap = {}
+
 -- =========================
--- Main Tab (Anti AFK)
+-- Main Tab
 -- =========================
 MainTab:Paragraph({
-    Title = "Anti AFK",
-    Desc = "Prevent being kicked for idling",
+    Title = "MangoHub Version",
+    Desc = "Version: 1.1 Demo",
     Image = "shield",
     Color = Color3.fromHex("#00ffcc")
+})
+
+MainTab:Paragraph({
+    Title = "Join Discord",
+    Desc = "discord.com/speedhub",
+    Image = "discord",
+    Color = Color3.fromHex("#7289da")
 })
 
 MainTab:Toggle({
@@ -49,7 +58,6 @@ MainTab:Toggle({
     Value = false,
     Callback = function(state)
         getgenv().AntiAFK_Enabled = state
-
         if state then
             if getgenv().AntiAFK_Connection then getgenv().AntiAFK_Connection:Disconnect() end
             local vu = game:GetService("VirtualUser")
@@ -64,11 +72,10 @@ MainTab:Toggle({
                     end
                 end
             end)
-
-            WindUI:Notify({Title = "Anti AFK", Content = "Enabled successfully!", Icon = "check", Duration = 3})
+            WindUI:Notify({Title="Anti AFK",Content="Enabled successfully!",Icon="check",Duration=3})
         else
             if getgenv().AntiAFK_Connection then getgenv().AntiAFK_Connection:Disconnect() end
-            WindUI:Notify({Title = "Anti AFK", Content = "Disabled!", Icon = "x", Duration = 3})
+            WindUI:Notify({Title="Anti AFK",Content="Disabled!",Icon="x",Duration=3})
         end
     end
 })
@@ -77,13 +84,22 @@ MainTab:Toggle({
 -- Automatic Tab
 -- =========================
 AutoTab:Paragraph({Title = "Automatic Mode", Desc = "Choose how the Anti AFK works", Image = "zap", Color = Color3.fromHex("#ffaa00")})
+
 AutoTab:Dropdown({
     Title = "Anti AFK Mode",
     Desc = "Select AFK method",
     Values = {"auto","jump"},
     Callback = function(val)
         getgenv().AntiAFK_Mode = val
-        WindUI:Notify({Title = "Anti AFK Mode", Content = "Changed to: "..val, Icon = "zap", Duration = 3})
+        WindUI:Notify({Title="Anti AFK Mode",Content="Changed to: "..val,Icon="zap",Duration=3})
+    end
+})
+
+AutoTab:Button({
+    Title = "Demo Button",
+    Desc = "Test demo functionality",
+    Callback = function()
+        WindUI:Notify({Title="Demo",Content="Demo mode active!",Icon="zap",Duration=3})
     end
 })
 
@@ -91,72 +107,44 @@ AutoTab:Dropdown({
 -- Config Tab
 -- =========================
 ConfigTab:Paragraph({Title = "Configuration", Desc = "Save or Delete UI config", Image = "settings", Color = Color3.fromHex("#00aaff")})
-ConfigTab:Button({Title = "Save Config", Desc = "Save all UI settings", Callback = function() WindUI:SaveConfig() WindUI:Notify({Title="Config",Content="Saved successfully!",Icon="check",Duration=3}) end})
-ConfigTab:Button({Title = "Delete Config", Desc = "Delete saved UI config", Callback = function() WindUI:DeleteConfig() WindUI:Notify({Title="Config",Content="Deleted successfully!",Icon="trash",Duration=3}) end})
 
--- =========================
--- Misc Tab (ESP Eggs + Pets)
--- =========================
-local ws = game.Workspace
-local petMap = {}
-
--- --- Egg ESP ---
-local function getPetName(model)
-    local v = model:FindFirstChild("PetName")
-    return v and v.Value or "???"
-end
-
-local function makeEggESP(model)
-    if not getgenv().EggESP_Enabled or not model:IsA("Model") then return end
-    if model:FindFirstChild("PetBillboard", true) then return end
-
-    local part = model:FindFirstChildWhichIsA("BasePart")
-    if not part then return end
-
-    local bb = Instance.new("BillboardGui")
-    bb.Name = "PetBillboard"
-    bb.Size = UDim2.new(0, 200, 0, 40)
-    bb.StudsOffset = Vector3.new(0, 3, 0)
-    bb.AlwaysOnTop = true
-    bb.Parent = part
-
-    local lbl = Instance.new("TextLabel", bb)
-    lbl.Size = UDim2.new(1, 0, 1, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.FredokaOne
-    lbl.Text = "🥚 " .. getPetName(model)
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
-    lbl.TextStrokeTransparency = 0.2
-end
-
-MiscTab:Toggle({
-    Title = "Enable Egg ESP",
-    Desc = "Show real pet names inside eggs",
-    Value = false,
-    Callback = function(state)
-        getgenv().EggESP_Enabled = state
-        if not state then
-            for _, bb in pairs(ws:GetDescendants()) do
-                if bb:IsA("BillboardGui") and bb.Name == "PetBillboard" then
-                    bb:Destroy()
-                end
-            end
-        end
+ConfigTab:Button({
+    Title = "Save Config",
+    Desc = "Save all UI settings",
+    Callback = function()
+        WindUI:SaveConfig()
+        WindUI:Notify({Title="Config",Content="Saved successfully!",Icon="check",Duration=3})
     end
 })
 
--- --- Pet ESP ---
-local function applyPetESP(petModel)
-    if not getgenv().PetESP_Enabled or not petModel:IsA("Model") then return end
-    if petMap[petModel] then return end
+ConfigTab:Button({
+    Title = "Delete Config",
+    Desc = "Delete saved UI config",
+    Callback = function()
+        WindUI:DeleteConfig()
+        WindUI:Notify({Title="Config",Content="Deleted successfully!",Icon="trash",Duration=3})
+    end
+})
 
-    local part = petModel:FindFirstChildWhichIsA("BasePart")
+-- =========================
+-- Misc Tab (ESP Pets)
+-- =========================
+local function getPetName(model)
+    local v = model:FindFirstChild("PetName")
+    return v and v.Value or model.Name
+end
+
+local function applyESP(obj)
+    if not getgenv().ESP_Enabled or not obj:IsA("Model") then return end
+    if espMap[obj] and espMap[obj].Parent then return end
+
+    local part = obj:FindFirstChildWhichIsA("BasePart")
     if not part then return end
 
     local bb = Instance.new("BillboardGui")
-    bb.Name = "PetESP"
-    bb.Size = UDim2.new(0, 200, 0, 30)
-    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.Name = "ESP_Billboard"
+    bb.Size = UDim2.new(0,200,0,30)
+    bb.StudsOffset = Vector3.new(0,3,0)
     bb.AlwaysOnTop = true
     bb.Parent = part
 
@@ -165,40 +153,47 @@ local function applyPetESP(petModel)
     lbl.BackgroundTransparency = 1
     lbl.TextScaled = true
     lbl.Font = Enum.Font.GothamBold
-    lbl.TextColor3 = Color3.fromRGB(255, 182, 193)
+    lbl.TextColor3 = Color3.fromRGB(255,182,193)
     lbl.TextStrokeTransparency = 0.2
-    lbl.Text = petModel.Name
-    petMap[petModel] = bb
+    if obj:FindFirstChild("PetName") then
+        lbl.Text = "🥚 "..getPetName(obj)
+    else
+        lbl.Text = obj.Name
+    end
+
+    espMap[obj] = bb
+
+    obj.Destroying:Connect(function()
+        if espMap[obj] then
+            espMap[obj]:Destroy()
+            espMap[obj] = nil
+        end
+    end)
 end
 
-local function scanPets()
-    for _, obj in pairs(ws:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
-            if string.find(obj.Name:lower(), "pet") then
-                applyPetESP(obj)
+local function scanESP()
+    for _, obj in ipairs(ws:GetDescendants()) do
+        if obj:IsA("Model") then
+            if obj:FindFirstChild("Humanoid") and string.find(obj.Name:lower(),"pet") then
+                applyESP(obj)
+            elseif obj:FindFirstChild("PetName") then
+                applyESP(obj)
             end
         end
     end
 end
 
 MiscTab:Toggle({
-    Title = "Enable Pet ESP",
-    Desc = "Highlight all pets with names",
+    Title = "ESP Pets",
+    Desc = "Highlight all pets and eggs",
     Value = false,
     Callback = function(state)
-        getgenv().PetESP_Enabled = state
-        if state then
-            task.spawn(function()
-                while getgenv().PetESP_Enabled do
-                    scanPets()
-                    task.wait(2)
-                end
-            end)
-        else
-            for _, bb in pairs(petMap) do
+        getgenv().ESP_Enabled = state
+        if not state then
+            for _, bb in pairs(espMap) do
                 if bb and bb.Parent then bb:Destroy() end
             end
-            petMap = {}
+            espMap = {}
         end
     end
 })
@@ -207,14 +202,7 @@ MiscTab:Toggle({
 -- RenderStepped Loop
 -- =========================
 game:GetService("RunService").RenderStepped:Connect(function()
-    if getgenv().EggESP_Enabled then
-        for _, egg in pairs(ws:GetDescendants()) do
-            if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-                makeEggESP(egg)
-            end
-        end
-    end
-    if getgenv().PetESP_Enabled then
-        scanPets()
+    if getgenv().ESP_Enabled then
+        scanESP()
     end
 end)
