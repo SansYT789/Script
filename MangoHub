@@ -2,13 +2,11 @@
 -- 🟣 MangoHub - Automatic + ESP Egg
 -- =================================
 
---// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
---// Global vars
 getgenv().ESP_Enabled = false
 
---// Window (mobile-friendly size)
+-- Window mobile-friendly
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Icon = "shield",
@@ -18,54 +16,71 @@ local Window = WindUI:CreateWindow({
     Theme = "Dark"
 })
 
---// Sections
+-- Sections
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
-local MiscSection = Window:Section({ Title = "Misc", Opened = true })
+local MiscSection = Window:Section({ Title = "ESP", Opened = true })
 
---// Tabs
+-- Tabs
 local MainTab = MainSection:Tab({ Title = "Automatic", Icon = "house" })
 local AutoTab = MainSection:Tab({ Title = "Auto Settings", Icon = "mouse-pointer-click" })
 local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
 local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 
 -- =========================
--- Main Tab (Automatic)
+-- MainTab content (Info / Update / Discord)
 -- =========================
 MainTab:Paragraph({
-    Title = "Automatic Features",
-    Desc = "Enable automatic game functions here",
+    Title = "New Update v1.2",
+    Desc = "Added mobile-friendly UI, optimized ESP, and other bug fixes.",
     Image = "zap",
     Color = Color3.fromHex("#00ffcc")
 })
 
--- Ví dụ toggle auto (tuỳ game mà thêm tính năng)
-MainTab:Toggle({
+MainTab:Button({
+    Title = "Join Discord",
+    Desc = "Click to join the official Discord server",
+    Callback = function()
+        local url = "https://discord.gg/yourserver"
+        if syn and syn.request then
+            syn.request({ Url = url, Method = "GET" })
+        else
+            setclipboard(url)
+            WindUI:Notify({
+                Title = "Discord",
+                Content = "Link copied to clipboard!",
+                Icon = "check",
+                Duration = 2
+            })
+        end
+    end
+})
+
+-- =========================
+-- AutoTab (automatic features)
+-- =========================
+AutoTab:Paragraph({
+    Title = "Automatic Features",
+    Desc = "Enable automatic game functions here",
+    Image = "zap",
+    Color = Color3.fromHex("#ffaa00")
+})
+
+AutoTab:Toggle({
     Title = "Enable Auto Stuff",
     Desc = "Turn automatic features on/off",
     Value = false,
     Callback = function(state)
-        -- đây là nơi bạn xử lý auto logic
         WindUI:Notify({
             Title = "Automatic",
             Content = state and "Enabled!" or "Disabled!",
             Icon = "check",
             Duration = 2
         })
+        -- Add auto functionality here
     end
 })
 
--- =========================
--- Auto Tab
--- =========================
-AutoTab:Paragraph({
-    Title = "Automatic Settings",
-    Desc = "Adjust how automatic features work",
-    Image = "zap",
-    Color = Color3.fromHex("#ffaa00")
-})
-
--- Auto settings dropdown ví dụ
 AutoTab:Dropdown({
     Title = "Mode",
     Desc = "Select auto mode",
@@ -77,11 +92,12 @@ AutoTab:Dropdown({
             Icon = "zap",
             Duration = 2
         })
+        -- Add mode-specific behavior here
     end
 })
 
 -- =========================
--- Config Tab
+-- ConfigTab
 -- =========================
 ConfigTab:Paragraph({
     Title = "Configuration",
@@ -95,12 +111,7 @@ ConfigTab:Button({
     Desc = "Save all UI settings",
     Callback = function()
         WindUI:SaveConfig()
-        WindUI:Notify({
-            Title = "Config",
-            Content = "Saved successfully!",
-            Icon = "check",
-            Duration = 2
-        })
+        WindUI:Notify({Title="Config",Content="Saved!",Icon="check",Duration=2})
     end
 })
 
@@ -109,57 +120,54 @@ ConfigTab:Button({
     Desc = "Delete saved UI config",
     Callback = function()
         WindUI:DeleteConfig()
-        WindUI:Notify({
-            Title = "Config",
-            Content = "Deleted successfully!",
-            Icon = "trash",
-            Duration = 2
-        })
+        WindUI:Notify({Title="Config",Content="Deleted!",Icon="trash",Duration=2})
     end
 })
 
 -- =========================
--- Misc Tab (ESP Egg)
+-- MiscTab (ESP Egg)
 -- =========================
-local ws = game.Workspace
-
-local function getPetName(model)
-    local v = model:FindFirstChild("PetName")
-    return v and v.Value or "???"
-end
-
 local function makeESP(model)
     if not getgenv().ESP_Enabled or not model:IsA("Model") then return end
-    if model:FindFirstChild("PetBillboard", true) then return end
 
     local part = model:FindFirstChildWhichIsA("BasePart")
     if not part then return end
 
-    local bb = Instance.new("BillboardGui")
-    bb.Name = "PetBillboard"
-    bb.Size = UDim2.new(0, 150, 0, 30)
-    bb.StudsOffset = Vector3.new(0, 2.5, 0)
-    bb.AlwaysOnTop = true
-    bb.Parent = part
+    local bb = model:FindFirstChild("PetBillboard")
+    if not bb then
+        bb = Instance.new("BillboardGui")
+        bb.Name = "PetBillboard"
+        bb.Size = UDim2.new(0, 200, 0, 40)
+        bb.StudsOffset = Vector3.new(0, 3, 0)
+        bb.AlwaysOnTop = true
+        bb.Parent = part
 
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 1, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.FredokaOne
-    lbl.Text = "🥚 " .. getPetName(model)
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
-    lbl.TextStrokeTransparency = 0.2
-    lbl.TextScaled = true
-    lbl.Parent = bb
+        local lbl = Instance.new("TextLabel")
+        lbl.Name = "Label"
+        lbl.Size = UDim2.new(1, 0, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Font = Enum.Font.FredokaOne
+        lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
+        lbl.TextStrokeTransparency = 0.2
+        lbl.TextScaled = true
+        lbl.Parent = bb
+    end
+
+    -- Update text dynamically
+    local label = bb:FindFirstChild("Label")
+    if label then
+        label.Text = (model.Name or "Unknown Egg") .. " • " .. (model:FindFirstChild("PetName") and model.PetName.Value or "???")
+    end
 end
 
+-- Toggle ESP via button
 MiscTab:Button({
     Title = "Toggle ESP Egg",
     Desc = "Show real pet names inside eggs",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
         if not getgenv().ESP_Enabled then
-            for _, bb in pairs(ws:GetDescendants()) do
+            for _, bb in pairs(game.Workspace:GetDescendants()) do
                 if bb:IsA("BillboardGui") and bb.Name == "PetBillboard" then
                     bb:Destroy()
                 end
@@ -168,9 +176,10 @@ MiscTab:Button({
     end
 })
 
+-- Keep ESP updated
 game:GetService("RunService").RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
-        for _, egg in pairs(ws:GetDescendants()) do
+        for _, egg in pairs(game.Workspace:GetDescendants()) do
             if egg:IsA("Model") and egg:FindFirstChild("PetName") then
                 makeESP(egg)
             end
