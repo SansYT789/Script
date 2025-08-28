@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Full WindUI + Auto Open Seed Pack/Chest + ESP Egg
+-- 🟣 MangoHub - Full WindUI + Auto Open Seed Pack/Chest (light) + ESP Egg
 -- =================================
 
 local Players = game:GetService("Players")
@@ -103,20 +103,22 @@ AutoTab:Dropdown({
     end
 })
 
--- Auto loop mở liên tục theo mode
-RunService.Stepped:Connect(function()
-    if getgenv().AutoOpenSeedPack and getgenv().AutoOpenMode ~= "None" then
-        local backpack = player:FindFirstChild("Backpack")
-        if backpack then
-            for _, item in pairs(backpack:GetChildren()) do
-                if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
-                    player.Character.Humanoid:EquipTool(item)
-                    if item:FindFirstChild("Activate") then
-                        item.Activate:Fire()
-                    elseif item:IsA("Tool") then
-                        item:Activate()
+-- Auto loop nhẹ nhàng (0.5s check 1 lần)
+spawn(function()
+    while true do
+        wait(0.5)
+        if getgenv().AutoOpenSeedPack and getgenv().AutoOpenMode ~= "None" then
+            local backpack = player:FindFirstChild("Backpack")
+            if backpack then
+                for _, item in pairs(backpack:GetChildren()) do
+                    if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
+                        player.Character.Humanoid:EquipTool(item)
+                        if item:FindFirstChild("Activate") then
+                            item.Activate:Fire()
+                        elseif item:IsA("Tool") then
+                            item:Activate()
+                        end
                     end
-                    break -- mở 1 item/lần mỗi frame
                 end
             end
         end
@@ -126,7 +128,6 @@ end)
 -- =========================
 -- Misc Tab: ESP Egg
 -- =========================
--- Client-side GUI for overlay
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "EggOverlayUI"
 ScreenGui.ResetOnSpawn = false
