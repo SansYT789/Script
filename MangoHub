@@ -1,83 +1,50 @@
 -- =================================
--- 🟣 MangoHub - Full Pack (WindUI)
+-- 🟣 MangoHub - Full Pack (Main + Misc + ESP Egg Fixed)
 -- =================================
 
---// Load WindUI (Footagesus UI Library)
+--// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
---// Global Settings
-getgenv().AutoOpenSeedPack = false
+--// Make Window
+local MainWindow = WindUI:MakeWindow({
+    Title = "🍀 MangoHub",
+    SubTitle = "Auto + ESP",
+    SaveFolder = "MangoHubConfig"
+})
+
+--// Tabs
+local MainTab = MainWindow:Tab({ Title = "Main", Icon = "house" })
+local MiscTab = MainWindow:Tab({ Title = "Misc", Icon = "sparkles" })
+
+-- =================================
+-- AUTO OPEN SEED PACK / CHEST
+-- =================================
 getgenv().AutoOpenMode = "None"
-getgenv().ESP_Enabled = false
+getgenv().AutoOpenEnabled = false
 
-local player = game.Players.LocalPlayer
+MainTab:CreateToggle("Auto Open Seed Pack", function(state)
+    getgenv().AutoOpenEnabled = state
+end, false)
 
--- =================================
--- 📌 ESP Egg (client-only visual)
--- =================================
-local function getEggName(model)
-    return model.Name or "Unknown Egg"
-end
+MainTab:CreateDropdown("Select Mode Open", { "None", "Seed pack", "Chest" }, function(val)
+    getgenv().AutoOpenMode = val
+end, "None")
 
-local function getPetName(model)
-    local v = model:FindFirstChild("PetName")
-    return v and v.Value or "???"
-end
-
-local function makeESPEgg(model)
-    if not getgenv().ESP_Enabled or not model:IsA("Model") then return end
-    if model:FindFirstChild("PetBillboard", true) then return end
-
-    local part = model:FindFirstChildWhichIsA("BasePart")
-    if not part then return end
-
-    local bb = Instance.new("BillboardGui")
-    bb.Name = "PetBillboard"
-    bb.Size = UDim2.new(0, 200, 0, 40)
-    bb.StudsOffset = Vector3.new(0, 3, 0)
-    bb.AlwaysOnTop = true
-    bb.Parent = part
-
-    local lbl = Instance.new("TextLabel", bb)
-    lbl.Size = UDim2.new(1, 0, 1, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.FredokaOne
-    lbl.Text = getEggName(model) .. " • " .. getPetName(model)
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
-    lbl.TextStrokeTransparency = 0.2
-    lbl.TextScaled = true
-end
-
--- auto scan eggs nhẹ máy
+-- Auto open loop
 task.spawn(function()
-    while true do
-        task.wait(1) -- check mỗi 1s để đỡ nóng máy
-        if getgenv().ESP_Enabled then
-            for _, egg in pairs(workspace:GetChildren()) do
-                if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-                    makeESPEgg(egg)
-                end
-            end
-        end
-    end
-end)
-
--- =================================
--- 📌 Auto Open Stuff (Seed Pack / Chest)
--- =================================
-task.spawn(function()
-    while true do
-        task.wait(0.5) -- nhẹ máy
-        if getgenv().AutoOpenSeedPack and getgenv().AutoOpenMode ~= "None" then
-            local backpack = player:FindFirstChild("Backpack")
+    while task.wait(1) do
+        if getgenv().AutoOpenEnabled and getgenv().AutoOpenMode ~= "None" then
+            local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
             if backpack then
                 for _, item in pairs(backpack:GetChildren()) do
-                    if item:IsA("Tool") and item.Name:lower():match(getgenv().AutoOpenMode:lower()) then
-                        if item:FindFirstChild("Activate") then
-                            item.Activate:Fire()
-                        elseif item:IsA("Tool") then
-                            item:Activate()
-                        end
+                    if getgenv().AutoOpenMode == "Seed pack" and string.find(item.Name:lower(), "seed") then
+                        game:GetService("Players").LocalPlayer.Character.Humanoid:EquipTool(item)
+                        mouse1click()
+                        break
+                    elseif getgenv().AutoOpenMode == "Chest" and string.find(item.Name:lower(), "chest") then
+                        game:GetService("Players").LocalPlayer.Character.Humanoid:EquipTool(item)
+                        mouse1click()
+                        break
                     end
                 end
             end
@@ -86,29 +53,51 @@ task.spawn(function()
 end)
 
 -- =================================
--- 🟣 WindUI Tabs
+-- ESP EGG (Highlight, ko spam, nhẹ máy)
 -- =================================
-local win = WindUI:NewWindow("MangoHub")
+getgenv().ESP_Enabled = false
 
--- Main Tab
-local mainTab = win:NewTab("Main")
-mainTab:CreateLabel("Welcome to MangoHub")
-mainTab:CreateLabel("Discord: discord.gg/mangohub")
+local function makeESPEgg(model)
+    if not getgenv().ESP_Enabled then return end
+    if model:FindFirstChild("PetHighlight") then return end
+    if not model:IsA("Model") or not model:FindFirstChild("PetName") then return end
 
--- Automatic Tab
-local autoTab = win:NewTab("Automatic")
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "PetHighlight"
+    highlight.FillColor = Color3.fromRGB(255, 255, 0) -- vàng
+    highlight.FillTransparency = 0.7
+    highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- đỏ
+    highlight.OutlineTransparency = 0
+    highlight.Adornee = model
+    highlight.Parent = model
+end
 
-autoTab:CreateToggle("Auto Open Seed Pack", function(state)
-    getgenv().AutoOpenSeedPack = state
-end, false)
+local function scanAllEggs()
+    for _, egg in pairs(workspace:GetChildren()) do
+        if egg:IsA("Model") and egg:FindFirstChild("PetName") then
+            makeESPEgg(egg)
+        end
+    end
+end
 
-autoTab:CreateDropdown("Select Mode Open", {"None", "Seed Pack", "Chest"}, "None", function(opt)
-    getgenv().AutoOpenMode = opt
+workspace.ChildAdded:Connect(function(obj)
+    if getgenv().ESP_Enabled and obj:IsA("Model") and obj:FindFirstChild("PetName") then
+        makeESPEgg(obj)
+    end
 end)
 
--- Misc Tab
-local miscTab = win:NewTab("Misc")
-
-miscTab:CreateToggle("ESP Egg", function(state)
+MiscTab:CreateToggle("ESP Egg", function(state)
     getgenv().ESP_Enabled = state
+    if state then
+        scanAllEggs()
+    else
+        for _, egg in pairs(workspace:GetChildren()) do
+            local hl = egg:FindFirstChild("PetHighlight")
+            if hl then hl:Destroy() end
+        end
+    end
 end, false)
+
+-- =================================
+-- Done
+-- =================================
