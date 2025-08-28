@@ -1,27 +1,46 @@
--- 🟣 MangoHub Loader
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+-- 🟣 MangoHub - Key → CheckGame (English Test Version)
 
-local Loader = WindUI:CreateWindow({
-    Title = "MangoHub - Key System",
-    Author = "by .ftgs",
-    Size = UDim2.fromOffset(400, 250),
+--// Load WindUI
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua")))()
+
+--// Create Window with KeySystem
+local Window = WindUI:CreateWindow({
+    Title = "MangoHub",
+    Icon = "key",
+    Author = ".ftgs",
+    Folder = "MangoHub",
+    Size = UDim2.fromOffset(580, 460),
     Theme = "Dark",
     Transparent = true,
-    Resizable = false,
-    HideSearchBar = true,
-    ScrollBarEnabled = false,
 
-    KeySystem = {
-        Key = { "1234" }, -- key test
-        Note = "Nhập key để mở MangoHub 🔑",
-        URL = "https://discord.gg/your-discord-link",
-        SaveKey = true,
+    KeySystem = { 
+        Key = { "1234", "5678" }, -- Example keys
+        Note = "Enter the correct key to unlock MangoHub.",
+        SaveKey = true, -- ✅ auto save & load key
+
+        Callback = function(validKey)
+            if validKey then
+                -- Notify user
+                WindUI:Notify({
+                    Title = "MangoHub",
+                    Content = "✅ Key Accepted! Loading Mango-CheckGame...",
+                    Duration = 4,
+                    Icon = "check"
+                })
+
+                -- Destroy key UI
+                Window:Destroy()
+
+                -- Load Mango-CheckGame
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
+            else
+                WindUI:Notify({
+                    Title = "MangoHub",
+                    Content = "❌ Invalid Key. Try again.",
+                    Duration = 4,
+                    Icon = "x"
+                })
+            end
+        end,
     },
 })
-
--- Khi nhập đúng key thì gọi hub chính
-Loader.OnSuccess = function()
-    Loader:Destroy() -- xoá UI nhập key ngay lập tức
-    -- Load MangoHub chính
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
-end
