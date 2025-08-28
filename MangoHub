@@ -1,10 +1,11 @@
 -- =================================
--- 🟣 MangoHub - Automatic + ESP Egg with TextBox
+-- 🟣 MangoHub - Automatic + ESP Egg with TextBox (v1.4)
 -- =================================
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 getgenv().ESP_Enabled = false -- mặc định tắt
+local ESP_Models = {} -- lưu các model đã tạo ESP
 
 -- Services
 local RunService = game:GetService("RunService")
@@ -34,14 +35,14 @@ local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 -- MainTab content
 -- =========================
 MainTab:Paragraph({
-    Title = "New Update v1.3",
-    Desc = "Added TextBox ESP on eggs, optimized mobile UI, and other fixes.",
+    Title = "New Update v1.4",
+    Desc = "Added small yellow TextLabel ESP, TextBox optional, mobile-optimized, lag fixed.",
     Image = "zap",
     Color = Color3.fromHex("#00ffcc")
 })
 
 -- =========================
--- AutoTab content (placeholder)
+-- AutoTab placeholder
 -- =========================
 AutoTab:Paragraph({
     Title = "Automatic Features",
@@ -93,44 +94,43 @@ ConfigTab:Button({
 })
 
 -- =========================
--- ESP with TextBox
+-- ESP + TextBox function
 -- =========================
 local function makeESP(model)
     if not getgenv().ESP_Enabled then return end
-    if not model:IsA("Model") then return end
-    if model:FindFirstChild("PetBillboard") then return end
+    if ESP_Models[model] then return end
 
     local part = model:FindFirstChildWhichIsA("BasePart")
     if not part then return end
 
-    -- Billboard GUI
     local bb = Instance.new("BillboardGui")
     bb.Name = "PetBillboard"
-    bb.Size = UDim2.new(0,250,0,60)
-    bb.StudsOffset = Vector3.new(0,3,0)
+    bb.Size = UDim2.new(0,250,0,40) -- nhỏ gọn
+    bb.StudsOffset = Vector3.new(0,2.5,0)
     bb.AlwaysOnTop = true
     bb.Parent = part
 
-    -- TextLabel (hiển thị NameEgg - NamePet)
+    -- TextLabel: NameEgg - NamePet
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,0.5,0)
+    label.Size = UDim2.new(1,0,1,0)
     label.BackgroundTransparency = 1
-    label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = Color3.fromRGB(255,255,0)
-    label.TextStrokeTransparency = 0.2
-    label.TextScaled = true
+    label.Font = Enum.Font.SourceSans -- font game Roblox
+    label.TextColor3 = Color3.fromRGB(255,255,0) -- vàng
+    label.TextStrokeTransparency = 0.5
+    label.TextScaled = false
+    label.TextSize = 14 -- nhỏ xíu
     local petName = model:FindFirstChild("PetName") and model.PetName.Value or "Please check again"
     label.Text = (model.Name or "Unknown Egg").." - "..petName
     label.Parent = bb
 
-    -- TextBox (cho visual textbox nhập nội dung)
+    -- TextBox optional
     local textbox = Instance.new("TextBox")
     textbox.Size = UDim2.new(1,0,0.5,0)
     textbox.Position = UDim2.new(0,0,0.5,0)
     textbox.BackgroundTransparency = 0.3
     textbox.BackgroundColor3 = Color3.fromRGB(0,0,0)
     textbox.TextColor3 = Color3.fromRGB(0,255,0)
-    textbox.Font = Enum.Font.FredokaOne
+    textbox.Font = Enum.Font.SourceSans
     textbox.PlaceholderText = "Type here..."
     textbox.TextScaled = true
     textbox.Parent = bb
@@ -140,20 +140,23 @@ local function makeESP(model)
             print("User typed on "..model.Name..": "..textbox.Text)
         end
     end)
+
+    ESP_Models[model] = bb
 end
 
--- Toggle ESP button
+-- =========================
+-- Toggle ESP Button
+-- =========================
 MiscTab:Button({
     Title = "Toggle ESP Egg",
-    Desc = "Show NameEgg - NamePet inside eggs (visual only)",
+    Desc = "Show NameEgg - NamePet (yellow small font) with optional TextBox",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
         if not getgenv().ESP_Enabled then
-            for _, gui in pairs(Workspace:GetDescendants()) do
-                if gui:IsA("BillboardGui") and gui.Name == "PetBillboard" then
-                    gui:Destroy()
-                end
+            for model, gui in pairs(ESP_Models) do
+                if gui and gui.Parent then gui:Destroy() end
             end
+            ESP_Models = {}
             WindUI:Notify({Title="ESP", Content="ESP Disabled", Icon="eye-slash", Duration=2})
         else
             WindUI:Notify({Title="ESP", Content="ESP Enabled", Icon="eye", Duration=2})
@@ -161,11 +164,13 @@ MiscTab:Button({
     end
 })
 
--- RenderStepped: update ESP continuously
+-- =========================
+-- RenderStepped: update ESP for new eggs only
+-- =========================
 RunService.RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
         for _, egg in pairs(Workspace:GetDescendants()) do
-            if egg:IsA("Model") then
+            if egg:IsA("Model") and not ESP_Models[egg] then
                 makeESP(egg)
             end
         end
