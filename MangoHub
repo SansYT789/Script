@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Anti AFK + ESP Pets v1.1 Demo (UI version, no icon)
+-- 🟣 MangoHub - Full Fix v1.1 Demo (ESP Pets + Eggs, no lag)
 -- =================================
 
 --// Load WindUI
@@ -26,10 +26,10 @@ local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
 --// Tabs
-local MainTab = MainSection:Tab({ Title = "Main" })
-local AutoTab = MainSection:Tab({ Title = "Automatic" })
-local ConfigTab = SettingsSection:Tab({ Title = "Configuration" })
-local MiscTab = MiscSection:Tab({ Title = "ESP" })
+local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })
+local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" })
+local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
+local MiscTab = MiscSection:Tab({ Title = "ESP Pets", Icon = "eye" })
 
 local ws = game.Workspace
 local plr = game.Players.LocalPlayer
@@ -128,7 +128,7 @@ ConfigTab:Button({
 })
 
 -- =========================
--- Misc Tab (ESP Pets + Eggs)
+-- Misc Tab (ESP Pets + Eggs Multi)
 -- =========================
 MiscTab:Toggle({
     Title = "ESP Pets",
@@ -137,43 +137,80 @@ MiscTab:Toggle({
     Callback = function(state)
         getgenv().ESP_Enabled = state
         if not state then
-            namePetLabel.Text = ""  -- skip khi không có pet
-            nameEggLabel.Text = ""  -- reset egg khi tắt
+            namePetLabel.Text = ""
+            nameEggLabel.Text = ""
         end
     end
 })
 
 -- =========================
--- Update ESP (lightweight, no lag)
+-- Helper Functions
 -- =========================
-game:GetService("RunService").RenderStepped:Connect(function()
-    if getgenv().ESP_Enabled then
-        -- Pet
-        local pet = nil
-        for _, obj in pairs(ws:GetDescendants()) do
-            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and string.find(obj.Name:lower(),"pet") then
-                pet = obj
-                break
-            end
-        end
-        if pet then
-            namePetLabel.Text = pet.Name
-        else
-            namePetLabel.Text = ""  -- skip nếu không có pet
-        end
+local petMap = {}
+local eggMap = {}
 
-        -- Egg
-        local egg = nil
-        for _, obj in pairs(ws:GetDescendants()) do
-            if obj:IsA("Model") and obj:FindFirstChild("PetName") then
-                egg = obj
-                break
+local function getRealPetName(egg)
+    local val = egg:FindFirstChild("PetName")
+    if val and val:IsA("StringValue") then
+        return val.Value
+    end
+    return "Unknown"
+end
+
+local function applyEggESP(egg, name)
+    if not eggMap[egg] then
+        eggMap[egg] = true
+    end
+    return name
+end
+
+local function applyPetESP(pet)
+    if not petMap[pet] then
+        petMap[pet] = true
+    end
+    return pet.Name
+end
+
+-- =========================
+-- Update ESP every 0.5s (lightweight)
+-- =========================
+task.spawn(function()
+    while true do
+        if getgenv().ESP_Enabled then
+            -- Pets
+            local pets = {}
+            for _, obj in pairs(ws:GetDescendants()) do
+                if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and string.find(obj.Name:lower(),"pet") then
+                    table.insert(pets, obj)
+                end
+            end
+            if #pets > 0 then
+                local t = {}
+                for _, pet in ipairs(pets) do
+                    table.insert(t, applyPetESP(pet))
+                end
+                namePetLabel.Text = table.concat(t," | ")
+            else
+                namePetLabel.Text = ""
+            end
+
+            -- Eggs
+            local eggs = {}
+            for _, obj in pairs(ws:GetDescendants()) do
+                if obj:IsA("Model") and obj:FindFirstChild("PetName") then
+                    table.insert(eggs, obj)
+                end
+            end
+            if #eggs > 0 then
+                local t = {}
+                for _, egg in ipairs(eggs) do
+                    table.insert(t, applyEggESP(egg, getRealPetName(egg)))
+                end
+                nameEggLabel.Text = table.concat(t," | ")
+            else
+                nameEggLabel.Text = ""
             end
         end
-        if egg then
-            nameEggLabel.Text = egg.PetName.Value
-        else
-            nameEggLabel.Text = ""  -- trống nếu không có egg
-        end
+        task.wait(0.5)
     end
 end)
