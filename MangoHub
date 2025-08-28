@@ -5,216 +5,200 @@
 --// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
---// Anti AFK Settings
+--// Global vars
 getgenv().AntiAFK_Mode = "auto"
 getgenv().AntiAFK_Enabled = false
 getgenv().AntiAFK_Connection = nil
+getgenv().ESP_Enabled = false
 
---// Main Window
+--// Window
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Icon = "shield",
     Author = "Made By Group Vinreach",
     Folder = "Mango",
-    Size = UDim2.fromOffset(450, 500),
+    Size = UDim2.fromOffset(450, 400),
     Theme = "Dark"
 })
 
 --// Sections
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
-local ESPSection = Window:Section({ Title = "ESP Features", Opened = true })
+local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
 --// Tabs
-local MainTab = MainSection:Tab({ Title = "Main", Icon = "home", Desc = "Main information and links" })
-local AntiAFKTab = MainSection:Tab({ Title = "Anti AFK", Icon = "shield", Desc = "Prevent AFK kick" })
-local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings", Desc = "UI and system settings" })
-local ESPTab = ESPSection:Tab({ Title = "ESP", Icon = "eye", Desc = "ESP for eggs" })
+local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })
+local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" })
+local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
+local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 
---// Main Tab
-MainTab:Paragraph({ Title = "Version: 1.0 [ Demo ]", Desc = "MangoHub - Made By Group Vinreach", Image = "info", ImageSize = 18, Color = Color3.fromHex("#30ff6a") })
-MainTab:Divider()
-MainTab:Button({
-    Title = "Join Discord",
-    Icon = "message-circle",
-    Variant = "Primary",
-    Callback = function()
-        setclipboard("https://discord.gg/vinreach")
-        WindUI:Notify({ Title = "Discord Link Copied!", Content = "Paste in browser to join", Icon = "clipboard", Duration = 4 })
+-- =========================
+-- Main Tab
+-- =========================
+MainTab:Paragraph({
+    Title = "Anti AFK",
+    Desc = "Prevent being kicked for idling",
+    Image = "shield",
+    Color = Color3.fromHex("#00ffcc")
+})
+
+MainTab:Toggle({
+    Title = "Enable Anti AFK",
+    Desc = "Turn Anti AFK on or off",
+    Value = false,
+    Callback = function(state)
+        getgenv().AntiAFK_Enabled = state
+
+        if state then
+            if getgenv().AntiAFK_Connection then getgenv().AntiAFK_Connection:Disconnect() end
+            local vu = game:GetService("VirtualUser")
+            getgenv().AntiAFK_Connection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+                if getgenv().AntiAFK_Mode == "auto" then
+                    vu:CaptureController()
+                    vu:ClickButton2(Vector2.new())
+                elseif getgenv().AntiAFK_Mode == "jump" then
+                    local char = game.Players.LocalPlayer.Character
+                    if char and char:FindFirstChild("Humanoid") then
+                        char.Humanoid.Jump = true
+                    end
+                end
+            end)
+
+            WindUI:Notify({
+                Title = "Anti AFK",
+                Content = "Enabled successfully!",
+                Icon = "check",
+                Duration = 3
+            })
+        else
+            if getgenv().AntiAFK_Connection then getgenv().AntiAFK_Connection:Disconnect() end
+            WindUI:Notify({
+                Title = "Anti AFK",
+                Content = "Disabled!",
+                Icon = "x",
+                Duration = 3
+            })
+        end
     end
 })
-MainTab:Paragraph({ Title = "Features", Desc = "• Anti AFK System\n• Multiple Detection Modes\n• Auto Random Actions\n• Easy Configuration", Image = "list", ImageSize = 16, Color = Color3.fromHex("#667eea") })
 
---// Anti AFK Tab empty (you requested)
+-- =========================
+-- Auto Tab
+-- =========================
+AutoTab:Paragraph({
+    Title = "Automatic Mode",
+    Desc = "Choose how the Anti AFK works",
+    Image = "zap",
+    Color = Color3.fromHex("#ffaa00")
+})
 
---// Config Tab
-ConfigTab:Paragraph({ Title = "Version: 1.0 [ Demo ]", Desc = "MangoHub Anti AFK System", Image = "info", ImageSize = 18, Color = Color3.fromHex("#30ff6a") })
-ConfigTab:Divider()
-ConfigTab:Paragraph({ Title = "Anti AFK Mode", Desc = "Choose how system keeps you active", Image = "settings", ImageSize = 16, Color = "White" })
+AutoTab:Dropdown({
+    Title = "Anti AFK Mode",
+    Desc = "Select AFK method",
+    Values = {"auto","jump"},
+    Callback = function(val)
+        getgenv().AntiAFK_Mode = val
+        WindUI:Notify({
+            Title = "Anti AFK Mode",
+            Content = "Changed to: "..val,
+            Icon = "zap",
+            Duration = 3
+        })
+    end
+})
 
-ConfigTab:Dropdown({
-    Title = "Choose Mode",
-    Values = {"auto", "click", "jump", "rotate"},
-    Value = "auto",
-    Callback = function(value)
-        getgenv().AntiAFK_Mode = value
-        WindUI:Notify({ Title = "Mode Changed", Content = "Anti AFK Mode set to: " .. value, Icon = "settings", Duration = 2 })
-        print("🔧 Anti AFK Mode set to: " .. value)
+-- =========================
+-- Config Tab
+-- =========================
+ConfigTab:Paragraph({
+    Title = "Configuration",
+    Desc = "Save or Delete UI config",
+    Image = "settings",
+    Color = Color3.fromHex("#00aaff")
+})
+
+ConfigTab:Button({
+    Title = "Save Config",
+    Desc = "Save all UI settings",
+    Callback = function()
+        WindUI:SaveConfig()
+        WindUI:Notify({
+            Title = "Config",
+            Content = "Saved successfully!",
+            Icon = "check",
+            Duration = 3
+        })
     end
 })
 
 ConfigTab:Button({
-    Title = "Toggle Anti AFK",
-    Icon = "power",
-    Variant = "Primary",
+    Title = "Delete Config",
+    Desc = "Delete saved UI config",
     Callback = function()
-        getgenv().AntiAFK_Enabled = not getgenv().AntiAFK_Enabled
-        local status = getgenv().AntiAFK_Enabled
-        WindUI:Notify({ Title = "Anti AFK", Content = status and "Enabled!" or "Disabled!", Icon = status and "check" or "x", Duration = 3 })
-        print("✅ Anti AFK: " .. tostring(status))
+        WindUI:DeleteConfig()
+        WindUI:Notify({
+            Title = "Config",
+            Content = "Deleted successfully!",
+            Icon = "trash",
+            Duration = 3
+        })
+    end
+})
 
-        if status then
-            local Players = game:GetService("Players")
-            local VirtualUser = game:GetService("VirtualUser")
-            local Camera = workspace.CurrentCamera
-            local Player = Players.LocalPlayer
+-- =========================
+-- Misc Tab (ESP Egg)
+-- =========================
+local ws = game.Workspace
 
-            if getgenv().AntiAFK_Connection then
-                getgenv().AntiAFK_Connection:Disconnect()
-            end
+local function getPetName(model)
+    local v = model:FindFirstChild("PetName")
+    return v and v.Value or "???"
+end
 
-            getgenv().AntiAFK_Connection = Player.Idled:Connect(function()
-                if not getgenv().AntiAFK_Enabled then return end
-                local mode = getgenv().AntiAFK_Mode
-                if mode == "auto" then
-                    local modes = {"click","jump","rotate"}
-                    mode = modes[math.random(1,#modes)]
+local function makeESP(model)
+    if not getgenv().ESP_Enabled or not model:IsA("Model") then return end
+    if model:FindFirstChild("PetBillboard", true) then return end
+
+    local part = model:FindFirstChildWhichIsA("BasePart")
+    if not part then return end
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "PetBillboard"
+    bb.Size = UDim2.new(0, 200, 0, 40)
+    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.AlwaysOnTop = true
+    bb.Parent = part
+
+    local lbl = Instance.new("TextLabel", bb)
+    lbl.Size = UDim2.new(1, 0, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.FredokaOne
+    lbl.Text = "🥚 " .. getPetName(model)
+    lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
+    lbl.TextStrokeTransparency = 0.2
+end
+
+MiscTab:Button({
+    Title = "Toggle ESP Egg",
+    Desc = "Show real pet names inside eggs",
+    Callback = function()
+        getgenv().ESP_Enabled = not getgenv().ESP_Enabled
+        if not getgenv().ESP_Enabled then
+            for _, bb in pairs(ws:GetDescendants()) do
+                if bb:IsA("BillboardGui") and bb.Name == "PetBillboard" then
+                    bb:Destroy()
                 end
-
-                if mode == "click" then
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton2(Vector2.new())
-                    print("🖱️ Fake Click")
-                elseif mode == "jump" then
-                    local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
-                    if humanoid then humanoid.Jump = true print("🦘 Jump") end
-                elseif mode == "rotate" then
-                    if Camera then Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(30), 0) print("🎥 Rotate Camera") end
-                end
-            end)
-        else
-            if getgenv().AntiAFK_Connection then
-                getgenv().AntiAFK_Connection:Disconnect()
-                getgenv().AntiAFK_Connection = nil
             end
         end
     end
 })
 
-ConfigTab:Divider()
-ConfigTab:Paragraph({ Title = "UI Customization", Desc = "Adjust interface settings", Image = "palette", ImageSize = 16, Color = Color3.fromHex("#667eea") })
-
-ConfigTab:Dropdown({
-    Title = "Select Theme",
-    Values = {"Dark","Light"},
-    Value = "Dark",
-    Callback = function(theme)
-        WindUI:SetTheme(theme)
-        WindUI:Notify({ Title = "Theme Changed", Content = "Switched to " .. theme .. " theme", Icon = "palette", Duration = 2 })
-    end
-})
-
-ConfigTab:Toggle({
-    Title = "Show Notifications",
-    Desc = "Enable system notifications",
-    Value = true,
-    Callback = function(state)
-        WindUI:Notify({ Title = "Notifications", Content = state and "Enabled" or "Disabled", Duration = 2 })
-    end
-})
-
---// ESP Egg Tab
-local ESPEnabled = false
-local truePetMap = {}
-
-local function getRealPetName(eggModel)
-    local val = eggModel:FindFirstChild("PetName")
-    if val and val:IsA("StringValue") then return val.Value end
-    return "Unknown"
-end
-
-local function getPlayerGardenEggs(radius)
-    local eggs = {}
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return eggs end
-    local petTable = {} -- your table of known pets if needed
-
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and petTable[obj.Name] then
-            local dist = (obj:GetPivot().Position - root.Position).Magnitude
-            if dist <= (radius or 60) then
-                local realPet = getRealPetName(obj)
-                truePetMap[obj] = realPet
-                table.insert(eggs, obj)
-            end
-        end
-    end
-    return eggs
-end
-
--- Apply ESP visuals
-local function applyEggESP(egg, name)
-    if not egg or not egg.PrimaryPart then return end
-    if egg:FindFirstChild("ESP_Billboard") then egg.ESP_Billboard:Destroy() end
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESP_Billboard"
-    billboard.Adornee = egg.PrimaryPart
-    billboard.Size = UDim2.new(0,100,0,50)
-    billboard.AlwaysOnTop = true
-
-    local textLabel = Instance.new("TextLabel", billboard)
-    textLabel.Size = UDim2.new(1,0,1,0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = name or "Unknown Egg"
-    textLabel.TextColor3 = Color3.fromRGB(255,255,0)
-    textLabel.TextStrokeTransparency = 0
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.TextScaled = true
-
-    billboard.Parent = game:GetService("CoreGui")
-end
-
--- ESP Toggle
-ESPTab:Toggle({
-    Title = "Enable ESP",
-    Desc = "Show nearby eggs",
-    Value = false,
-    Callback = function(state)
-        ESPEnabled = state
-        WindUI:Notify({ Title = "ESP", Content = state and "Enabled!" or "Disabled!", Icon = "eye", Duration = 2 })
-        print("👀 ESP Enabled:", ESPEnabled)
-    end
-})
-
--- Render Loop
 game:GetService("RunService").RenderStepped:Connect(function()
-    if not ESPEnabled then return end
-    for _, egg in pairs(getPlayerGardenEggs(60)) do
-        applyEggESP(egg, truePetMap[egg] or getRealPetName(egg))
+    if getgenv().ESP_Enabled then
+        for _, egg in pairs(ws:GetDescendants()) do
+            if egg:IsA("Model") and egg:FindFirstChild("PetName") then
+                makeESP(egg)
+            end
+        end
     end
-end)
-
---// Startup Notification
-WindUI:Notify({ Title = "MangoHub Loaded!", Content = "Anti AFK + ESP ready", Icon = "check-circle", Duration = 3 })
-
---// Cleanup
-Window:OnClose(function()
-    if getgenv().AntiAFK_Connection then
-        getgenv().AntiAFK_Connection:Disconnect()
-        getgenv().AntiAFK_Connection = nil
-    end
-    getgenv().AntiAFK_Enabled = false
 end)
