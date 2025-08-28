@@ -1,23 +1,12 @@
 -- =================================
--- 🟣 MangoHub - Visual Egg UI + WindUI
+-- 🟣 MangoHub - Automatic + ESP Egg (Client-side Visual)
 -- =================================
 
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
-
-local player = Players.LocalPlayer
-
--- =========================
--- Load WindUI
--- =========================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-getgenv().ESP_Enabled = false -- toggle ESP
+getgenv().ESP_Enabled = false -- mặc định tắt
 
--- =========================
--- Create Window
--- =========================
+-- Window mobile-friendly
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Icon = "shield",
@@ -29,89 +18,164 @@ local Window = WindUI:CreateWindow({
 
 -- Sections
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
+local SettingsSection = Window:Section({ Title = "Settings", Opened = true })
 local MiscSection = Window:Section({ Title = "ESP", Opened = true })
 
 -- Tabs
 local MainTab = MainSection:Tab({ Title = "Automatic", Icon = "house" })
-local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })
+local AutoTab = MainSection:Tab({ Title = "Auto Settings", Icon = "mouse-pointer-click" })
+local ConfigTab = SettingsSection:Tab({ Title = "Configuration", Icon = "settings" })
+local MiscTab = MiscSection:Tab({ Title = "ESP", Icon = "eye" })
 
 -- =========================
--- MainTab content (info placeholder)
+-- MainTab content (Info / Update / Discord)
 -- =========================
 MainTab:Paragraph({
-    Title = "Visual Egg UI",
-    Desc = "Client-side overlay for Eggs and Pets",
+    Title = "New Update v1.2",
+    Desc = "Added mobile-friendly UI, optimized ESP, and other bug fixes.",
     Image = "zap",
     Color = Color3.fromHex("#00ffcc")
 })
 
--- =========================
--- Create ScreenGui visual (Egg UI)
--- =========================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "EggOverlayUI"
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
-
-local UiPet = Instance.new("Frame")
-UiPet.Name = "UiPet"
-UiPet.Size = UDim2.new(0, 260, 0, 70)
-UiPet.Position = UDim2.new(0, 228, 0, 52)
-UiPet.BackgroundColor3 = Color3.fromRGB(215, 193, 255)
-UiPet.BackgroundTransparency = 0.5
-UiPet.BorderSizePixel = 0
-UiPet.Parent = ScreenGui
-
-local NameEgg = Instance.new("TextLabel")
-NameEgg.Name = "NameEgg"
-NameEgg.Size = UDim2.new(0, 130, 0, 40)
-NameEgg.Position = UDim2.new(0, 28, 0, 6)
-NameEgg.BackgroundTransparency = 1
-NameEgg.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameEgg.TextSize = 20
-NameEgg.Font = Enum.Font.Highway
-NameEgg.TextXAlignment = Enum.TextXAlignment.Left
-NameEgg.Parent = UiPet
-
-local NamePet = Instance.new("TextLabel")
-NamePet.Name = "NamePet"
-NamePet.Size = UDim2.new(0, 102, 0, 22)
-NamePet.Position = UDim2.new(0, 30, 0, 38)
-NamePet.BackgroundTransparency = 1
-NamePet.TextColor3 = Color3.fromRGB(143, 128, 170)
-NamePet.TextSize = 13
-NamePet.Font = Enum.Font.Comic
-NamePet.TextXAlignment = Enum.TextXAlignment.Left
-NamePet.Parent = UiPet
-
--- =========================
--- MiscTab (ESP toggle button)
--- =========================
-MiscTab:Button({
-    Title = "Toggle Egg Visual",
-    Desc = "Show/hide Egg UI overlay (client-only)",
+MainTab:Button({
+    Title = "Join Discord",
+    Desc = "Click to join the official Discord server",
     Callback = function()
-        getgenv().ESP_Enabled = not getgenv().ESP_Enabled
-        ScreenGui.Enabled = getgenv().ESP_Enabled
+        local url = "https://discord.gg/yourserver"
+        if syn and syn.request then
+            syn.request({ Url = url, Method = "GET" })
+        else
+            setclipboard(url)
+            WindUI:Notify({
+                Title = "Discord",
+                Content = "Link copied to clipboard!",
+                Icon = "check",
+                Duration = 2
+            })
+        end
+    end
+})
+
+-- =========================
+-- AutoTab (automatic features placeholder)
+-- =========================
+AutoTab:Paragraph({
+    Title = "Automatic Features",
+    Desc = "Enable automatic game functions here",
+    Image = "zap",
+    Color = Color3.fromHex("#ffaa00")
+})
+
+AutoTab:Toggle({
+    Title = "Enable Auto Stuff",
+    Desc = "Turn automatic features on/off",
+    Value = false,
+    Callback = function(state)
         WindUI:Notify({
-            Title = "Egg Visual",
-            Content = getgenv().ESP_Enabled and "Enabled" or "Disabled",
+            Title = "Automatic",
+            Content = state and "Enabled!" or "Disabled!",
             Icon = "check",
             Duration = 2
         })
     end
 })
 
+AutoTab:Dropdown({
+    Title = "Mode",
+    Desc = "Select auto mode",
+    Values = {"Mode1","Mode2"},
+    Callback = function(val)
+        WindUI:Notify({
+            Title = "Automatic Mode",
+            Content = "Selected: "..val,
+            Icon = "zap",
+            Duration = 2
+        })
+    end
+})
+
 -- =========================
--- Update overlay text based on workspace eggs
+-- ConfigTab
 -- =========================
+ConfigTab:Paragraph({
+    Title = "Configuration",
+    Desc = "Save or Delete UI config",
+    Image = "settings",
+    Color = Color3.fromHex("#00aaff")
+})
+
+ConfigTab:Button({
+    Title = "Save Config",
+    Desc = "Save all UI settings",
+    Callback = function()
+        WindUI:SaveConfig()
+        WindUI:Notify({Title="Config",Content="Saved!",Icon="check",Duration=2})
+    end
+})
+
+ConfigTab:Button({
+    Title = "Delete Config",
+    Desc = "Delete saved UI config",
+    Callback = function()
+        WindUI:DeleteConfig()
+        WindUI:Notify({Title="Config",Content="Deleted!",Icon="trash",Duration=2})
+    end
+})
+
+-- =========================
+-- MiscTab (ESP Egg visual only)
+-- =========================
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local function makeESP(model)
+    if not getgenv().ESP_Enabled then return end
+    if not model:IsA("Model") then return end
+    if model:FindFirstChild("PetBillboard") then return end
+
+    local part = model:FindFirstChildWhichIsA("BasePart")
+    if not part then return end
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "PetBillboard"
+    bb.Size = UDim2.new(0,200,0,40)
+    bb.StudsOffset = Vector3.new(0,3,0)
+    bb.AlwaysOnTop = true
+    bb.Parent = part
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.FredokaOne
+    label.TextColor3 = Color3.fromRGB(255,255,0)
+    label.TextStrokeTransparency = 0.2
+    label.TextScaled = true
+    label.Text = (model.Name or "Unknown Egg").." • "..(model:FindFirstChild("PetName") and model.PetName.Value or "???")
+    label.Parent = bb
+end
+
+-- Toggle ESP button
+MiscTab:Button({
+    Title = "Toggle ESP Egg",
+    Desc = "Show real pet names inside eggs (visual only)",
+    Callback = function()
+        getgenv().ESP_Enabled = not getgenv().ESP_Enabled
+        if not getgenv().ESP_Enabled then
+            for _, gui in pairs(Workspace:GetDescendants()) do
+                if gui:IsA("BillboardGui") and gui.Name == "PetBillboard" then
+                    gui:Destroy()
+                end
+            end
+        end
+    end
+})
+
+-- RenderStepped: update ESP continuously
 RunService.RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
         for _, egg in pairs(Workspace:GetDescendants()) do
             if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-                NameEgg.Text = egg.Name
-                NamePet.Text = egg.PetName.Value
-                break -- chỉ show first egg, remove if want multiple
+                makeESP(egg)
             end
         end
     end
