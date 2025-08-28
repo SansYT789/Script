@@ -1,5 +1,5 @@
 -- =================================
--- 🟣 MangoHub - Full WindUI + Automatic + ESP + Auto Open Seed Pack/Chest
+-- 🟣 MangoHub - Full WindUI + Auto Open Seed Pack/Chest + ESP Egg
 -- =================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local player = Players.LocalPlayer
 -- =========================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 getgenv().ESP_Enabled = false
-getgenv().AutoStuffEnabled = false
+getgenv().AutoOpenSeedPack = false
 getgenv().AutoOpenMode = "None"
 
 -- =========================
@@ -28,17 +28,14 @@ local Window = WindUI:CreateWindow({
 })
 
 -- =========================
--- Sections
+-- Sections & Tabs
 -- =========================
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
-local MiscSection = Window:Section({ Title = "ESP", Opened = true })
+local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
--- =========================
--- Tabs
--- =========================
-local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })        
-local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" }) 
-local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })    
+local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })
+local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" })
+local MiscTab = MiscSection:Tab({ Title = "ESP Egg", Icon = "eye" })
 
 -- =========================
 -- MainTab content
@@ -65,35 +62,35 @@ MainTab:Button({
 })
 
 -- =========================
--- Automatic Tab content
+-- Automatic Tab
 -- =========================
 AutoTab:Paragraph({
     Title = "Automatic Features",
-    Desc = "Enable automatic game functions here",
+    Desc = "Automatically open items based on selected mode",
     Image = "zap",
     Color = Color3.fromHex("#ffaa00")
 })
 
--- Toggle chung Automatic Stuff
+-- Switch Auto Open Seed Pack
 AutoTab:Toggle({
-    Title = "Enable Automatic Stuff",
-    Desc = "Turn all automatic features on/off",
+    Title = "Auto Open Seed Pack",
+    Desc = "Automatically open items when enabled",
     Value = false,
     Callback = function(state)
+        getgenv().AutoOpenSeedPack = state
         WindUI:Notify({
-            Title="Automatic",
+            Title="Auto Open Seed Pack",
             Content=state and "Enabled!" or "Disabled!",
             Icon="check",
             Duration=2
         })
-        getgenv().AutoStuffEnabled = state
     end
 })
 
--- Dropdown Mode: None / Seed Pack / Chest
+-- Dropdown Select Mode Open: None / Seed Pack / Chest
 AutoTab:Dropdown({
-    Title = "Mode",
-    Desc = "Select which item to auto open",
+    Title = "Select mode open",
+    Desc = "Choose which item to auto open",
     Values = {"None", "Seed Pack", "Chest"},
     Callback = function(val)
         getgenv().AutoOpenMode = val
@@ -106,110 +103,81 @@ AutoTab:Dropdown({
     end
 })
 
--- Nút Auto Open theo mode
-AutoTab:Button({
-    Title = "Auto Open",
-    Desc = "Automatically open item of selected mode",
-    Callback = function()
-        if not getgenv().AutoStuffEnabled then
-            WindUI:Notify({Title="Auto Open", Content="Please enable Automatic Stuff first!", Icon="warning", Duration=2})
-            return
-        end
-
-        if getgenv().AutoOpenMode == "None" then
-            WindUI:Notify({Title="Auto Open", Content="Mode is None. Nothing will be opened.", Icon="info", Duration=2})
-            return
-        end
-
-        local backpack = player:WaitForChild("Backpack")
-        for _, item in pairs(backpack:GetChildren()) do
-            if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
-                -- cầm item
-                player.Character.Humanoid:EquipTool(item)
-                -- kích hoạt item
-                if item:FindFirstChild("Activate") then
-                    item.Activate:Fire()
-                elseif item:IsA("Tool") then
-                    item:Activate()
+-- Auto loop mở liên tục theo mode
+RunService.Stepped:Connect(function()
+    if getgenv().AutoOpenSeedPack and getgenv().AutoOpenMode ~= "None" then
+        local backpack = player:FindFirstChild("Backpack")
+        if backpack then
+            for _, item in pairs(backpack:GetChildren()) do
+                if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
+                    player.Character.Humanoid:EquipTool(item)
+                    if item:FindFirstChild("Activate") then
+                        item.Activate:Fire()
+                    elseif item:IsA("Tool") then
+                        item:Activate()
+                    end
+                    break -- mở 1 item/lần mỗi frame
                 end
-                WindUI:Notify({Title="Auto Open", Content="Opened "..item.Name, Icon="check", Duration=2})
-                break -- chỉ mở 1 item/lần
             end
         end
     end
-})
+end)
 
 -- =========================
--- ESP Tab: Visual Egg + Pet
+-- Misc Tab: ESP Egg
 -- =========================
+-- Client-side GUI for overlay
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "EggOverlayUI"
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Enabled = getgenv().ESP_Enabled
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
 
-local UiPet = Instance.new("Frame")
-UiPet.Name = "UiPet"
-UiPet.Size = UDim2.new(0, 260, 0, 70)
-UiPet.Position = UDim2.new(0, 228, 0, 52)
-UiPet.BackgroundColor3 = Color3.fromRGB(215, 193, 255)
-UiPet.BackgroundTransparency = 0.5
-UiPet.BorderSizePixel = 0
-UiPet.Parent = ScreenGui
+local function createBillboard(model)
+    if model:FindFirstChild("EggBillboard") then return end
+    local part = model:FindFirstChildWhichIsA("BasePart")
+    if not part then return end
 
-Instance.new("UICorner", UiPet)
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "EggBillboard"
+    bb.Size = UDim2.new(0, 150, 0, 30)
+    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.AlwaysOnTop = true
+    bb.Parent = part
 
-local LeftFrame = Instance.new("Frame")
-LeftFrame.Size = UDim2.new(0, 16, 0, 58)
-LeftFrame.Position = UDim2.new(0, 8, 0, 6)
-LeftFrame.BackgroundColor3 = Color3.fromRGB(231, 211, 255)
-LeftFrame.BackgroundTransparency = 0.3
-LeftFrame.BorderSizePixel = 0
-LeftFrame.Parent = UiPet
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.FredokaOne
+    lbl.Text = model.Name .. " • " .. (model:FindFirstChild("PetName") and model.PetName.Value or "???")
+    lbl.TextColor3 = Color3.fromRGB(255,255,0)
+    lbl.TextStrokeTransparency = 0.2
+    lbl.TextScaled = true
+    lbl.Parent = bb
+end
 
-Instance.new("UICorner", LeftFrame)
-
-local NameEgg = Instance.new("TextLabel")
-NameEgg.Name = "NameEgg"
-NameEgg.Size = UDim2.new(0, 130, 0, 40)
-NameEgg.Position = UDim2.new(0, 28, 0, 6)
-NameEgg.BackgroundTransparency = 1
-NameEgg.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameEgg.TextSize = 20
-NameEgg.Font = Enum.Font.Highway
-NameEgg.TextXAlignment = Enum.TextXAlignment.Left
-NameEgg.Parent = UiPet
-
-local NamePet = Instance.new("TextLabel")
-NamePet.Name = "NamePet"
-NamePet.Size = UDim2.new(0, 102, 0, 22)
-NamePet.Position = UDim2.new(0, 30, 0, 38)
-NamePet.BackgroundTransparency = 1
-NamePet.TextColor3 = Color3.fromRGB(143, 128, 170)
-NamePet.TextSize = 13
-NamePet.Font = Enum.Font.Comic
-NamePet.TextXAlignment = Enum.TextXAlignment.Left
-NamePet.Parent = UiPet
-
--- Toggle ESP Tab
+-- Toggle ESP Egg
 MiscTab:Button({
-    Title = "Toggle Egg Visual",
-    Desc = "Show/hide Egg UI overlay (client-only)",
+    Title = "Toggle ESP Egg",
+    Desc = "Show/hide Egg + Pet overlay (client-only)",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
         ScreenGui.Enabled = getgenv().ESP_Enabled
-        WindUI:Notify({Title="Egg Visual", Content=getgenv().ESP_Enabled and "Enabled" or "Disabled", Icon="check", Duration=2})
+        WindUI:Notify({
+            Title="ESP Egg",
+            Content=getgenv().ESP_Enabled and "Enabled" or "Disabled",
+            Icon="check",
+            Duration=2
+        })
     end
 })
 
--- Update overlay text based on Workspace eggs
+-- RenderStepped để tạo/update overlay đúng vị trí, không spam
 RunService.RenderStepped:Connect(function()
     if getgenv().ESP_Enabled then
         for _, egg in pairs(Workspace:GetDescendants()) do
             if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-                NameEgg.Text = egg.Name
-                NamePet.Text = egg.PetName.Value
-                break -- chỉ show first egg
+                createBillboard(egg)
             end
         end
     end
