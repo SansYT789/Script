@@ -1,0 +1,27 @@
+-- 🟣 MangoHub Loader
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Loader = WindUI:CreateWindow({
+    Title = "MangoHub - Key System",
+    Author = "by .ftgs",
+    Size = UDim2.fromOffset(400, 250),
+    Theme = "Dark",
+    Transparent = true,
+    Resizable = false,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+
+    KeySystem = {
+        Key = { "1234" }, -- key test
+        Note = "Nhập key để mở MangoHub 🔑",
+        URL = "https://discord.gg/your-discord-link",
+        SaveKey = true,
+    },
+})
+
+-- Khi nhập đúng key thì gọi hub chính
+Loader.OnSuccess = function()
+    Loader:Destroy() -- xoá UI nhập key ngay lập tức
+    -- Load MangoHub chính
+    loadstring(game:HttpGet("https://pastebin.com/raw/"))()
+end
