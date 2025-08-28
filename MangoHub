@@ -1,21 +1,58 @@
 -- =================================
--- 🟣 MangoHub - Visual Egg + Pet UI (Client-side)
+-- 🟣 MangoHub - Visual Egg UI + WindUI
 -- =================================
 
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
 
--- ========== Create ScreenGui ==========
+-- =========================
+-- Load WindUI
+-- =========================
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+getgenv().ESP_Enabled = false -- toggle ESP
+
+-- =========================
+-- Create Window
+-- =========================
+local Window = WindUI:CreateWindow({
+    Title = "MangoHub",
+    Icon = "shield",
+    Author = "Made By Group Vinreach",
+    Folder = "Mango",
+    Size = UDim2.fromOffset(320, 360),
+    Theme = "Dark"
+})
+
+-- Sections
+local MainSection = Window:Section({ Title = "Main Features", Opened = true })
+local MiscSection = Window:Section({ Title = "ESP", Opened = true })
+
+-- Tabs
+local MainTab = MainSection:Tab({ Title = "Automatic", Icon = "house" })
+local MiscTab = MiscSection:Tab({ Title = "Egg Visual", Icon = "eye" })
+
+-- =========================
+-- MainTab content (info placeholder)
+-- =========================
+MainTab:Paragraph({
+    Title = "Visual Egg UI",
+    Desc = "Client-side overlay for Eggs and Pets",
+    Image = "zap",
+    Color = Color3.fromHex("#00ffcc")
+})
+
+-- =========================
+-- Create ScreenGui visual (Egg UI)
+-- =========================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "PetOverlayUI"
+ScreenGui.Name = "EggOverlayUI"
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- ========== Main Frame ==========
 local UiPet = Instance.new("Frame")
 UiPet.Name = "UiPet"
 UiPet.Size = UDim2.new(0, 260, 0, 70)
@@ -23,23 +60,8 @@ UiPet.Position = UDim2.new(0, 228, 0, 52)
 UiPet.BackgroundColor3 = Color3.fromRGB(215, 193, 255)
 UiPet.BackgroundTransparency = 0.5
 UiPet.BorderSizePixel = 0
-UiPet.AutomaticSize = Enum.AutomaticSize.X
 UiPet.Parent = ScreenGui
 
-local UICornerMain = Instance.new("UICorner", UiPet)
-
--- ========== Left Indicator ==========
-local LeftFrame = Instance.new("Frame")
-LeftFrame.Size = UDim2.new(0, 16, 0, 58)
-LeftFrame.Position = UDim2.new(0, 8, 0, 6)
-LeftFrame.BackgroundColor3 = Color3.fromRGB(231, 211, 255)
-LeftFrame.BackgroundTransparency = 0.3
-LeftFrame.BorderSizePixel = 0
-LeftFrame.Parent = UiPet
-
-local UICornerLeft = Instance.new("UICorner", LeftFrame)
-
--- ========== Name Labels ==========
 local NameEgg = Instance.new("TextLabel")
 NameEgg.Name = "NameEgg"
 NameEgg.Size = UDim2.new(0, 130, 0, 40)
@@ -49,7 +71,6 @@ NameEgg.TextColor3 = Color3.fromRGB(255, 255, 255)
 NameEgg.TextSize = 20
 NameEgg.Font = Enum.Font.Highway
 NameEgg.TextXAlignment = Enum.TextXAlignment.Left
-NameEgg.TextWrapped = true
 NameEgg.Parent = UiPet
 
 local NamePet = Instance.new("TextLabel")
@@ -63,15 +84,35 @@ NamePet.Font = Enum.Font.Comic
 NamePet.TextXAlignment = Enum.TextXAlignment.Left
 NamePet.Parent = UiPet
 
--- ========== Update Visual Text ==========
--- Example: update every frame (optional)
+-- =========================
+-- MiscTab (ESP toggle button)
+-- =========================
+MiscTab:Button({
+    Title = "Toggle Egg Visual",
+    Desc = "Show/hide Egg UI overlay (client-only)",
+    Callback = function()
+        getgenv().ESP_Enabled = not getgenv().ESP_Enabled
+        ScreenGui.Enabled = getgenv().ESP_Enabled
+        WindUI:Notify({
+            Title = "Egg Visual",
+            Content = getgenv().ESP_Enabled and "Enabled" or "Disabled",
+            Icon = "check",
+            Duration = 2
+        })
+    end
+})
+
+-- =========================
+-- Update overlay text based on workspace eggs
+-- =========================
 RunService.RenderStepped:Connect(function()
-    -- Loop through eggs in workspace (adjust path if needed)
-    for _, egg in pairs(Workspace:GetDescendants()) do
-        if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-            NameEgg.Text = egg.Name
-            NamePet.Text = egg.PetName.Value
-            break -- only show first egg, remove if want more logic
+    if getgenv().ESP_Enabled then
+        for _, egg in pairs(Workspace:GetDescendants()) do
+            if egg:IsA("Model") and egg:FindFirstChild("PetName") then
+                NameEgg.Text = egg.Name
+                NamePet.Text = egg.PetName.Value
+                break -- chỉ show first egg, remove if want multiple
+            end
         end
     end
 end)
