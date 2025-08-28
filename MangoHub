@@ -1,23 +1,22 @@
 -- =================================
--- 🟣 MangoHub - Full WindUI + Auto Click Seed Pack/Chest + ESP Egg
+-- 🟣 MangoHub - Final: Robust ESP Egg Fix
 -- =================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local CollectionService = game:GetService("CollectionService")
 local player = Players.LocalPlayer
 
--- =========================
 -- Load WindUI
--- =========================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+-- Global flags
 getgenv().ESP_Enabled = false
 getgenv().AutoClickSeedPack = false
 getgenv().AutoOpenMode = "None"
 
--- =========================
--- Create Window
--- =========================
+-- UI window (minimal main + automatic + misc)
 local Window = WindUI:CreateWindow({
     Title = "MangoHub",
     Icon = "shield",
@@ -27,9 +26,6 @@ local Window = WindUI:CreateWindow({
     Theme = "Dark"
 })
 
--- =========================
--- Sections & Tabs
--- =========================
 local MainSection = Window:Section({ Title = "Main Features", Opened = true })
 local MiscSection = Window:Section({ Title = "Misc", Opened = true })
 
@@ -37,73 +33,57 @@ local MainTab = MainSection:Tab({ Title = "Main", Icon = "house" })
 local AutoTab = MainSection:Tab({ Title = "Automatic", Icon = "mouse-pointer-click" })
 local MiscTab = MiscSection:Tab({ Title = "ESP Egg", Icon = "eye" })
 
--- =========================
 -- MainTab content
--- =========================
 MainTab:Paragraph({
     Title = "Visual Egg UI",
-    Desc = "Client-side overlay for Eggs and Pets",
+    Desc = "Client-only overlay for Eggs & Pets — stable, non-spam",
     Image = "zap",
     Color = Color3.fromHex("#00ffcc")
 })
 
 MainTab:Button({
     Title = "Join Discord",
-    Desc = "Click to join our Discord server",
+    Desc = "Click to copy server invite",
     Callback = function()
         local url = "https://discord.gg/yourserver"
         if syn and syn.request then
-            syn.request({Url = url, Method = "GET"})
+            pcall(function() syn.request({Url = url, Method = "GET"}) end)
         else
-            setclipboard(url)
+            pcall(function() setclipboard(url) end)
             WindUI:Notify({Title="Discord", Content="Link copied!", Icon="check", Duration=2})
         end
     end
 })
 
--- =========================
--- Automatic Tab
--- =========================
+-- Automatic Tab: Auto Click Seed Pack (light loop handled earlier)
 AutoTab:Paragraph({
     Title = "Automatic Features",
-    Desc = "Automatically click items based on selected mode",
+    Desc = "Auto-click Seed Pack / Chest (light, 0.5s interval)",
     Image = "zap",
     Color = Color3.fromHex("#ffaa00")
 })
 
--- Switch Auto Click Seed Pack
 AutoTab:Toggle({
     Title = "Auto Click Seed Pack",
-    Desc = "Automatically click items when enabled",
+    Desc = "Automatically click selected items when enabled",
     Value = false,
     Callback = function(state)
         getgenv().AutoClickSeedPack = state
-        WindUI:Notify({
-            Title="Auto Click Seed Pack",
-            Content=state and "Enabled!" or "Disabled!",
-            Icon="check",
-            Duration=2
-        })
+        WindUI:Notify({Title="Auto Click", Content=state and "Enabled" or "Disabled", Icon="check", Duration=2})
     end
 })
 
--- Dropdown Select Mode Open: None / Seed Pack / Chest
 AutoTab:Dropdown({
     Title = "Select mode open",
-    Desc = "Choose which item to auto click",
+    Desc = "Choose item to auto click",
     Values = {"None", "Seed Pack", "Chest"},
     Callback = function(val)
         getgenv().AutoOpenMode = val
-        WindUI:Notify({
-            Title="Automatic Mode",
-            Content="Selected: "..val,
-            Icon="zap",
-            Duration=2
-        })
+        WindUI:Notify({Title="Automatic Mode", Content="Selected: "..val, Icon="zap", Duration=2})
     end
 })
 
--- Auto loop click nhẹ nhàng (0.5s check 1 lần)
+-- lightweight auto click loop (0.5s)
 spawn(function()
     while true do
         wait(0.5)
@@ -111,13 +91,20 @@ spawn(function()
             local backpack = player:FindFirstChild("Backpack")
             if backpack then
                 for _, item in pairs(backpack:GetChildren()) do
-                    if item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
-                        -- Auto click item
-                        if item:FindFirstChild("Activate") then
-                            item.Activate:Fire()
-                        elseif item:IsA("Tool") then
-                            item:Activate()
+                    if item and item:IsA("Tool") and item.Name:match(getgenv().AutoOpenMode) then
+                        -- Try to call Activate safely
+                        local ok, err = pcall(function()
+                            if item:FindFirstChild("Activate") then
+                                item.Activate:Fire()
+                            elseif item:IsA("Tool") then
+                                item:Activate()
+                            end
+                        end)
+                        if not ok then
+                            -- ignore errors from unusual tools
                         end
+                        -- small pause to avoid rapid double-activations on same loop
+                        wait(0.07)
                     end
                 end
             end
@@ -126,60 +113,184 @@ spawn(function()
 end)
 
 -- =========================
--- Misc Tab: ESP Egg
+-- ESP Egg manager (robust, no spam)
 -- =========================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "EggOverlayUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Enabled = getgenv().ESP_Enabled
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
 
-local function createBillboard(model)
-    if model:FindFirstChild("EggBillboard") then return end
-    local part = model:FindFirstChildWhichIsA("BasePart")
+-- Table to track billboards and conns: key = model, value = {bb = BillboardGui, conns = { ... }}
+local espMap = {}
+
+local function findPartForModel(model)
+    -- prefer PrimaryPart, else any BasePart
+    if not model then return nil end
+    if model.PrimaryPart and model.PrimaryPart:IsA("BasePart") then
+        return model.PrimaryPart
+    end
+    return model:FindFirstChildWhichIsA("BasePart")
+end
+
+local function createBillboardFor(model)
+    if not model or not model.Parent then return end
+    if espMap[model] then return end
+
+    local part = findPartForModel(model)
     if not part then return end
 
     local bb = Instance.new("BillboardGui")
     bb.Name = "EggBillboard"
-    bb.Size = UDim2.new(0, 150, 0, 30)
+    bb.Adornee = part
+    bb.Size = UDim2.new(0, 180, 0, 32)
     bb.StudsOffset = Vector3.new(0, 3, 0)
     bb.AlwaysOnTop = true
-    bb.Parent = part
+    bb.ResetOnSpawn = false
+    bb.Parent = player:WaitForChild("PlayerGui") -- parent to PlayerGui so it's client-only and managed
 
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.Name = "Label"
+    lbl.Size = UDim2.new(1, 0, 1, 0)
     lbl.BackgroundTransparency = 1
     lbl.Font = Enum.Font.FredokaOne
-    lbl.Text = model.Name .. " • " .. (model:FindFirstChild("PetName") and model.PetName.Value or "???")
-    lbl.TextColor3 = Color3.fromRGB(255,255,0)
-    lbl.TextStrokeTransparency = 0.2
     lbl.TextScaled = true
+    lbl.TextStrokeTransparency = 0.2
+    lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
     lbl.Parent = bb
+
+    -- update function
+    local function updateText()
+        local petName = "???"
+        local eggName = model.Name or "Unknown Egg"
+        local pn = model:FindFirstChild("PetName")
+        if pn and pn:IsA("StringValue") then
+            petName = pn.Value
+        end
+        lbl.Text = eggName .. " • " .. petName
+    end
+
+    -- set initial text
+    pcall(updateText)
+
+    -- listen pet name changes
+    local conns = {}
+
+    local pn = model:FindFirstChild("PetName")
+    if pn and pn:IsA("StringValue") then
+        conns[#conns+1] = pn.Changed:Connect(function()
+            pcall(updateText)
+        end)
+    end
+
+    -- if PetName appears later, watch DescendantAdded for model
+    conns[#conns+1] = model.DescendantAdded:Connect(function(desc)
+        if desc.Name == "PetName" and desc:IsA("StringValue") then
+            pcall(updateText)
+            conns[#conns+1] = desc.Changed:Connect(function() pcall(updateText) end)
+        end
+    end)
+
+    -- cleanup if model removed from workspace
+    conns[#conns+1] = model.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            -- model removed, cleanup
+            if espMap[model] then
+                -- disconnect
+                for _, c in ipairs(espMap[model].conns) do
+                    if c and c.Disconnect then pcall(function() c:Disconnect() end) end
+                end
+                -- destroy billboard
+                pcall(function() if espMap[model].bb and espMap[model].bb.Parent then espMap[model].bb:Destroy() end end)
+                espMap[model] = nil
+            end
+        end
+    end)
+
+    -- store
+    espMap[model] = { bb = bb, conns = conns }
 end
 
--- Toggle ESP Egg
+local function removeBillboardFor(model)
+    if not model then return end
+    local entry = espMap[model]
+    if not entry then return end
+    for _, c in ipairs(entry.conns) do
+        pcall(function() c:Disconnect() end)
+    end
+    pcall(function() if entry.bb and entry.bb.Parent then entry.bb:Destroy() end end)
+    espMap[model] = nil
+end
+
+-- scan workspace for eggs and create billboards as needed (one-time scan)
+local function scanForEggs()
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("PetName") then
+            if getgenv().ESP_Enabled then
+                createBillboardFor(v)
+            end
+        end
+    end
+end
+
+-- When descendants added, create billboard if it's an egg
+local addedConn = Workspace.DescendantAdded:Connect(function(desc)
+    if not getgenv().ESP_Enabled then return end
+    if desc:IsA("Model") and desc:FindFirstChild("PetName") then
+        createBillboardFor(desc)
+    elseif desc.Name == "PetName" and desc:IsA("StringValue") then
+        local model = desc:FindFirstAncestorOfClass("Model")
+        if model and getgenv().ESP_Enabled then
+            createBillboardFor(model)
+        end
+    end
+end)
+
+-- If ESP toggled off -> cleanup all
+local function disableAllESP()
+    for model, entry in pairs(espMap) do
+        for _, c in ipairs(entry.conns) do
+            pcall(function() c:Disconnect() end)
+        end
+        pcall(function() if entry.bb and entry.bb.Parent then entry.bb:Destroy() end end)
+        espMap[model] = nil
+    end
+end
+
+-- Toggle button in UI
 MiscTab:Button({
-    Title = "Toggle ESP Egg",
-    Desc = "Show/hide Egg + Pet overlay (client-only)",
+    Title = "ESP Egg",
+    Desc = "Toggle Egg + Pet overlay (client-only, stable)",
     Callback = function()
         getgenv().ESP_Enabled = not getgenv().ESP_Enabled
-        ScreenGui.Enabled = getgenv().ESP_Enabled
-        WindUI:Notify({
-            Title="ESP Egg",
-            Content=getgenv().ESP_Enabled and "Enabled" or "Disabled",
-            Icon="check",
-            Duration=2
-        })
+        WindUI:Notify({ Title = "ESP Egg", Content = getgenv().ESP_Enabled and "Enabled" or "Disabled", Icon = "check", Duration = 2 })
+        if getgenv().ESP_Enabled then
+            scanForEggs()
+        else
+            disableAllESP()
+        end
     end
 })
 
--- RenderStepped để tạo/update overlay đúng vị trí, không spam
-RunService.RenderStepped:Connect(function()
-    if getgenv().ESP_Enabled then
-        for _, egg in pairs(Workspace:GetDescendants()) do
-            if egg:IsA("Model") and egg:FindFirstChild("PetName") then
-                createBillboard(egg)
+-- Also periodically ensure billboards exist for eggs (light heartbeat, only when enabled)
+local hbConn
+hbConn = RunService.Heartbeat:Connect(function(dt)
+    if not getgenv().ESP_Enabled then return end
+    -- every heartbeat we do a cheap check but avoid heavy ops:
+    -- ensure any model with PetName has a billboard (but skip if already present)
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("PetName") then
+            if not espMap[v] then
+                -- throttle creation to avoid burst: create immediately but it's cheap
+                createBillboardFor(v)
             end
         end
     end
 end)
+
+-- Clean up on script unload (optional)
+local function cleanupAll()
+    addedConn:Disconnect()
+    if hbConn and hbConn.Disconnect then pcall(function() hbConn:Disconnect() end) end
+    disableAllESP()
+end
+
+-- optional: expose cleanup to getgenv for manual call
+getgenv().MangoHub_CleanupESP = cleanupAll
+
+-- end of ESP manager
