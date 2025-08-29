@@ -1,10 +1,8 @@
---// Load WindUI
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
---// List game hỗ trợ
 local supportedGames = {
     ["Grow a Garden"] = 126884695634066,
-    -- Thêm game khác ở đây
+    ["DOORS"] = 7326934954
 }
 
 local currentPlaceId = game.PlaceId
@@ -21,7 +19,6 @@ for name, id in pairs(supportedGames) do
 
         isSupported = true
 
-        --// Load Key System của Red
         loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-GAG"))()
         break
     end
