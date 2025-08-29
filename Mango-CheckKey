@@ -7,63 +7,60 @@ local WindUI_URL = "https://raw.githubusercontent.com/RoyRedRedVN/Library-Ui-For
 local WindUI = loadstring(game:HttpGet(WindUI_URL))()
 
 --// Create MangoHub Window
-local localWindow = WindUI:CreateWindow({
+local Window = WindUI:CreateWindow({
     Title = "MangoHub",
+    Icon = "door-open",
+    Author = "by Vinreach",
+    Folder = "Key",
+    
+    -- ↓ This all is Optional. You can remove it.
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
     Theme = "Dark",
-    Size = UDim2.fromOffset(400, 300),
-    Position = UDim2.fromScale(0.5, 0.5),
-    AnchorPoint = Vector2.new(0.5, 0.5),
     Resizable = true,
-
-    -- ✅ KeySystem Config
-    KeySystem = {
-        Key = { "MangoVIP", "RedVIP" },
-        Note = "Enter your VIP key to unlock MangoHub!",
-        SaveKey = true, -- save & auto load key
-        URL = "https://discord.gg/yourlink" -- change to your key link
-    }
+    SideBarWidth = 200,
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    
+    -- ↓ Optional. You can remove it.
+    --[[ You can set 'rbxassetid://' or video to Background.
+        'rbxassetid://':
+            Background = "rbxassetid://", -- rbxassetid
+        Video:
+            Background = "video:YOUR-RAW-LINK-TO-VIDEO.webm", -- video 
+    --]]
+    
+    -- ↓ Optional. You can remove it.
+    User = {
+        Enabled = true,
+        Anonymous = true,
+        Callback = function()
+            print("clicked")
+        end,
+    },
+    
+    -- !  ↓  remove this all, 
+    -- !  ↓  if you DON'T need the key system
+    KeySystem = { 
+        -- ↓ Optional. You can remove it.
+        Key = { "1234", "5678" },
+        
+        Note = "Key System.",
+        
+        -- ↓ Optional. You can remove it.
+        Thumbnail = {
+            Image = "rbxassetid://",
+            Title = "Thumbnail",
+        },
+        
+        -- ↓ Optional. You can remove it.
+        URL = "YOUR LINK TO GET KEY (Discord, Linkvertise, Pastebin, etc.)",
+        
+        -- ↓ Optional. You can remove it.
+        SaveKey = false, -- automatically save and load the key.
+        
+        -- ↓ Optional. You can remove it.
+        -- API = {} ← Services. Read about it below ↓
+    },
 })
-
---// Main Tab
-local localMainTab = localWindow:CreateTab("Main")
-
---// Info Label
-localMainTab:CreateLabel("Made by RoyRedRed")
-
---// Example Toggle
-localMainTab:CreateToggle({
-    Name = "Example Toggle",
-    Default = false,
-    Callback = function(state)
-        print("Toggle state:", state)
-    end
-})
-
---// Auto loader after key verified
-local function LoadMangoScript()
-    WindUI:Notify({
-        Title = "MangoHub",
-        Content = "✅ Key accepted! Loading Mango-CheckGame...",
-        Duration = 3,
-        Color = Color3.fromRGB(255,165,0)
-    })
-    task.delay(1, function()
-        local success, err = pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
-        end)
-        if not success then
-            warn("MangoHub Loader Error: " .. tostring(err))
-        end
-    end)
-end
-
---// Detect if key loaded from SaveKey
-task.delay(0.5, function()
-    WindUI:Notify({
-        Title = "MangoHub",
-        Content = "🔑 Key loaded from Save!",
-        Duration = 3,
-        Color = Color3.fromRGB(100, 200, 100)
-    })
-    LoadMangoScript()
-end)
