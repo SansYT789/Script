@@ -13,7 +13,6 @@ local Window = WindUI:CreateWindow({
     Author = "by Vinreach",
     Folder = "Key",
     
-    -- ↓ This all is Optional. You can remove it.
     Size = UDim2.fromOffset(580, 460),
     Transparent = true,
     Theme = "Dark",
@@ -23,15 +22,6 @@ local Window = WindUI:CreateWindow({
     HideSearchBar = true,
     ScrollBarEnabled = false,
     
-    -- ↓ Optional. You can remove it.
-    --[[ You can set 'rbxassetid://' or video to Background.
-        'rbxassetid://':
-            Background = "rbxassetid://", -- rbxassetid
-        Video:
-            Background = "video:YOUR-RAW-LINK-TO-VIDEO.webm", -- video 
-    --]]
-    
-    -- ↓ Optional. You can remove it.
     User = {
         Enabled = true,
         Anonymous = true,
@@ -40,27 +30,16 @@ local Window = WindUI:CreateWindow({
         end,
     },
     
-    -- !  ↓  remove this all, 
-    -- !  ↓  if you DON'T need the key system
+    -- Key System
     KeySystem = { 
-        -- ↓ Optional. You can remove it.
         Key = { "1234", "5678" },
-        
         Note = "Key System.",
-        
-        -- ↓ Optional. You can remove it.
-        Thumbnail = {
-            Image = "rbxassetid://",
-            Title = "Thumbnail",
-        },
-        
-        -- ↓ Optional. You can remove it.
         URL = "YOUR LINK TO GET KEY (Discord, Linkvertise, Pastebin, etc.)",
-        
-        -- ↓ Optional. You can remove it.
-        SaveKey = false, -- automatically save and load the key.
-        
-        -- ↓ Optional. You can remove it.
-        -- API = {} ← Services. Read about it below ↓
+        SaveKey = true,
+
+        -- ✅ Auto load script khi nhập key đúng
+        Callback = function(key)
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/RoyRedRedVN/Script/refs/heads/main/Mango-CheckGame"))()
+        end,
     },
 })
