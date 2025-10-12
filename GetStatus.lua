@@ -1,6 +1,5 @@
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
--- // Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
@@ -9,54 +8,41 @@ local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local MarketplaceService = game:GetService("MarketplaceService")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
 
--- // Player
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local character = player.Character or player.CharacterAdded:Wait()
-local hum = nil
-local hrp = nil
+local char, hum, hrp
 
--- // Game Information
-local GameName = MarketplaceService:GetProductInfo(game.PlaceId).Name or "Unknown Game"
-local PlaceId = tostring(game.PlaceId)
-local GameId = tostring(game.GameId)
-local JobId = tostring(game.JobId)
+local GameInfo = {
+    Name = MarketplaceService:GetProductInfo(game.PlaceId).Name or "Unknown Game",
+    PlaceId = tostring(game.PlaceId),
+    GameId = tostring(game.GameId),
+    JobId = tostring(game.JobId)
+}
 
--- =========================
--- UI Window
--- =========================
+local FPSCounter = {value = 0, lastUpdate = 0}
+local PlayerCache = {}
+
 local Window = WindUI:CreateWindow({
-    Title = "MangoHub — Get Status [" .. GameName .. "]",
+    Title = "MangoHub — " .. GameInfo.Name,
     Icon = "zap",
     Author = "Vinreach Group",
     Folder = "MangoHub",
-    Size = UDim2.fromOffset(380, 480),
+    Size = UDim2.fromOffset(400, 500),
     Theme = "Dark"
 })
 
--- =========================
--- Utilities
--- =========================
-local function SendMessage(msg)
-    local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-    if channel and channel.SendAsync then
-        pcall(function() channel:SendAsync(msg) end)
-    elseif ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") then
-        pcall(function() ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All") end)
-    end
-end
-
 local function Notify(title, desc, duration, icon)
     WindUI:Notify({
-        Title = title or "MangoHub — Get Status",
-        Content = desc or "No details provided",
+        Title = title,
+        Content = desc,
         Icon = icon or "zap",
-        Duration = duration or 3,
+        Duration = duration or 3
     })
 end
 
-local function CopyToClipboard(text)
+local function Copy(text)
     if setclipboard then
         setclipboard(tostring(text))
         Notify("Copied!", "Text copied to clipboard", 2, "clipboard")
@@ -65,327 +51,304 @@ local function CopyToClipboard(text)
     end
 end
 
--- =========================
--- Character Setup
--- =========================
-local function setupChar(characters)
-    char = characters
-    character = characters
-    hum = char:WaitForChild("Humanoid")
-    hrp = char:WaitForChild("HumanoidRootPart")
+local function SendChat(msg)
+    local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+    if channel and channel.SendAsync then
+        pcall(function() channel:SendAsync(msg) end)
+    elseif ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") then
+        pcall(function() ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All") end)
+    end
 end
 
-if player.Character then
-    setupChar(player.Character)
-end
-player.CharacterAdded:Connect(setupChar)
-
--- =========================
--- Information Functions
--- =========================
-local function GetPlayerCount()
-    return #Players:GetPlayers()
+local function SetupCharacter(newChar)
+    char = newChar
+    hum = char:WaitForChild("Humanoid", 5)
+    hrp = char:WaitForChild("HumanoidRootPart", 5)
 end
 
-local function GetMaxPlayers()
-    return Players.MaxPlayers
+if player.Character then SetupCharacter(player.Character) end
+player.CharacterAdded:Connect(SetupCharacter)
+
+local function UpdateFPS()
+    local now = tick()
+    if now - FPSCounter.lastUpdate > 1 then
+        FPSCounter.value = math.floor(1 / RunService.Heartbeat:Wait())
+        FPSCounter.lastUpdate = now
+    end
+    return FPSCounter.value
 end
 
-local function GetServerRegion()
-    return game:GetService("LocalizationService").RobloxLocaleId or "Unknown"
+local function GetPlayerData()
+    return {
+        count = #Players:GetPlayers(),
+        max = Players.MaxPlayers,
+        list = PlayerCache
+    }
 end
 
-local function GetPing()
-    return math.floor(player:GetNetworkPing() * 1000) .. " ms"
+local function UpdatePlayerCache()
+    PlayerCache = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        table.insert(PlayerCache, p.Name)
+    end
 end
 
-local function GetFPS()
-    local fps = 0
-    local heartbeat = game:GetService("RunService").Heartbeat
-    local lastTick = tick()
-    
-    heartbeat:Connect(function()
-        fps = math.floor(1 / (tick() - lastTick))
-        lastTick = tick()
-    end)
-    
-    return fps
-end
-
-local function GetCurrentPosition()
+local function GetPosition()
     if hrp then
         local pos = hrp.Position
-        return string.format("X: %.2f, Y: %.2f, Z: %.2f", pos.X, pos.Y, pos.Z)
+        return string.format("%.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
     end
-    return "Position unavailable"
+    return "Unavailable"
 end
 
 local function GetNearbyPlayers(radius)
-    radius = radius or 50
-    local nearbyPlayers = {}
-    
-    if hrp then
-        for _, otherPlayer in pairs(Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local distance = (hrp.Position - otherPlayer.Character.HumanoidRootPart.Position).Magnitude
-                if distance <= radius then
-                    table.insert(nearbyPlayers, {
-                        name = otherPlayer.Name,
-                        distance = math.floor(distance)
-                    })
-                end
+    if not hrp then return {} end
+    local nearby = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (hrp.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if dist <= radius then
+                table.insert(nearby, {name = p.Name, dist = math.floor(dist)})
             end
         end
     end
-    
-    return nearbyPlayers
+    table.sort(nearby, function(a, b) return a.dist < b.dist end)
+    return nearby
 end
 
-local function GetSpawnLocations()
+local function GetSpawns()
     local spawns = {}
-    for _, obj in pairs(Workspace:GetDescendants()) do
+    for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("SpawnLocation") then
-            table.insert(spawns, {
-                name = obj.Name,
-                position = obj.Position
-            })
+            table.insert(spawns, {name = obj.Name, pos = obj.Position})
         end
     end
     return spawns
 end
 
--- =========================
--- Tabs
--- =========================
-local MainTab = Window:Tab({ Title = "Main", Icon = "house" })
-local PlayerTab = Window:Tab({ Title = "Players", Icon = "users" })
-local MapTab = Window:Tab({ Title = "Map Info", Icon = "map" })
-local SystemTab = Window:Tab({ Title = "System", Icon = "settings" })
-
--- =========================
--- Main Tab
--- =========================
-MainTab:Button({
-    Title = "Copy Game Name",
-    Icon = "bell",
-    Callback = function()
-        CopyToClipboard(GameName)
+local function CountObjects()
+    local counts = {parts = 0, models = 0, scripts = 0}
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then counts.parts = counts.parts + 1
+        elseif obj:IsA("Model") then counts.models = counts.models + 1
+        elseif obj:IsA("BaseScript") then counts.scripts = counts.scripts + 1 end
     end
-})
+    return counts
+end
 
-MainTab:Button({
-    Title = "Copy Game Id",
-    Icon = "hash",
-    Callback = function()
-        CopyToClipboard(GameId)
+local function GetNetworkInfo()
+    return {
+        ping = math.floor(player:GetNetworkPing() * 1000),
+        region = game:GetService("LocalizationService").RobloxLocaleId or "Unknown"
+    }
+end
+
+local function GetSystemStats()
+    return {
+        memory = math.floor(Stats:GetTotalMemoryUsageMb()),
+        fps = UpdateFPS(),
+        dataRecv = math.floor(Stats.DataReceiveKbps),
+        dataSent = math.floor(Stats.DataSendKbps)
+    }
+end
+
+local MainTab = Window:Tab({Title = "Main", Icon = "house"})
+local PlayerTab = Window:Tab({Title = "Players", Icon = "users"})
+local MapTab = Window:Tab({Title = "Map", Icon = "map"})
+local SystemTab = Window:Tab({Title = "System", Icon = "cpu"})
+local UtilityTab = Window:Tab({Title = "Utility", Icon = "tool"})
+
+MainTab:Button({Title = "Copy Game Name", Icon = "type", Callback = function() Copy(GameInfo.Name) end})
+MainTab:Button({Title = "Copy Game ID", Icon = "hash", Callback = function() Copy(GameInfo.GameId) end})
+MainTab:Button({Title = "Copy Place ID", Icon = "map-pin", Callback = function() Copy(GameInfo.PlaceId) end})
+MainTab:Button({Title = "Copy Job ID", Icon = "server", Callback = function() Copy(GameInfo.JobId) end})
+MainTab:Button({Title = "Copy Position", Icon = "crosshair", Callback = function() Copy(GetPosition()) end})
+MainTab:Divider({Text = "Actions"})
+MainTab:Button({Title = "Rejoin Server", Icon = "refresh-cw", Callback = function() 
+    TeleportService:Teleport(game.PlaceId, player) 
+end})
+MainTab:Button({Title = "Server Hop", Icon = "shuffle", Callback = function()
+    local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+    if servers.data[1] then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, servers.data[1].id, player)
+    else
+        Notify("Error", "No servers available", 3, "x")
     end
-})
+end})
 
-MainTab:Button({
-    Title = "Copy Place Id",
-    Icon = "map-pin",
-    Callback = function()
-        CopyToClipboard(PlaceId)
-    end
-})
+PlayerTab:Button({Title = "Player Count", Icon = "users", Callback = function()
+    local data = GetPlayerData()
+    Notify("Players", data.count .. "/" .. data.max .. " online", 3, "users")
+    Copy(data.count .. "/" .. data.max)
+end})
 
-MainTab:Button({
-    Title = "Copy Job Id",
-    Icon = "server",
-    Callback = function()
-        CopyToClipboard(JobId)
-    end
-})
+PlayerTab:Button({Title = "List All Players", Icon = "list", Callback = function()
+    UpdatePlayerCache()
+    Copy(table.concat(PlayerCache, ", "))
+    Notify("Player List", "Copied " .. #PlayerCache .. " names", 3, "list")
+end})
 
-MainTab:Button({
-    Title = "Copy Current Position",
-    Icon = "crosshair",
-    Callback = function()
-        CopyToClipboard(GetCurrentPosition())
-    end
-})
-
-MainTab:Button({
-    Title = "Rejoin Server",
-    Icon = "refresh-cw",
-    Callback = function()
-        TeleportService:Teleport(game.PlaceId, player)
-    end
-})
-
--- =========================
--- Player Tab
--- =========================
-PlayerTab:Button({
-    Title = "Get Player Count",
-    Icon = "users",
-    Callback = function()
-        local count = GetPlayerCount()
-        local max = GetMaxPlayers()
-        Notify("Player Count", count .. "/" .. max .. " players online", 4, "users")
-        CopyToClipboard(count .. "/" .. max)
-    end
-})
-
-PlayerTab:Button({
-    Title = "List All Players",
-    Icon = "list",
-    Callback = function()
-        local playerList = {}
-        for _, p in pairs(Players:GetPlayers()) do
-            table.insert(playerList, p.Name)
+PlayerTab:Button({Title = "Nearby Players (50 studs)", Icon = "radar", Callback = function()
+    local nearby = GetNearbyPlayers(50)
+    if #nearby > 0 then
+        local text = {}
+        for _, p in ipairs(nearby) do
+            table.insert(text, p.name .. " (" .. p.dist .. "m)")
         end
-        local playerString = table.concat(playerList, ", ")
-        CopyToClipboard(playerString)
-        Notify("Player List", "Copied " .. #playerList .. " player names", 3, "list")
+        Copy(table.concat(text, ", "))
+        Notify("Nearby", "Found " .. #nearby .. " players", 3, "radar")
+    else
+        Notify("Nearby", "No players nearby", 3, "radar")
     end
-})
+end})
 
-PlayerTab:Button({
-    Title = "Find Nearby Players",
-    Icon = "radar",
-    Callback = function()
-        local nearby = GetNearbyPlayers(50)
-        if #nearby > 0 then
-            local nearbyText = {}
-            for _, p in pairs(nearby) do
-                table.insert(nearbyText, p.name .. " (" .. p.distance .. " studs)")
-            end
-            local nearbyString = table.concat(nearbyText, ", ")
-            CopyToClipboard(nearbyString)
-            Notify("Nearby Players", "Found " .. #nearby .. " players within 50 studs", 4, "radar")
-        else
-            Notify("Nearby Players", "No players found within 50 studs", 3, "radar")
+PlayerTab:Button({Title = "Spectate Random Player", Icon = "eye", Callback = function()
+    local players = Players:GetPlayers()
+    local target = players[math.random(#players)]
+    if target and target ~= player and target.Character then
+        Workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
+        Notify("Spectating", target.Name, 3, "eye")
+    end
+end})
+
+PlayerTab:Button({Title = "Reset Camera", Icon = "camera-off", Callback = function()
+    if char and hum then
+        Workspace.CurrentCamera.CameraSubject = hum
+        Notify("Camera", "Reset to self", 2, "camera")
+    end
+end})
+
+MapTab:Button({Title = "Get Spawn Locations", Icon = "flag", Callback = function()
+    local spawns = GetSpawns()
+    if #spawns > 0 then
+        local text = {}
+        for _, s in ipairs(spawns) do
+            table.insert(text, s.name)
+        end
+        Copy(table.concat(text, ", "))
+        Notify("Spawns", "Found " .. #spawns .. " locations", 3, "flag")
+    else
+        Notify("Spawns", "None found", 3, "flag")
+    end
+end})
+
+MapTab:Button({Title = "Lighting Info", Icon = "sun", Callback = function()
+    local info = string.format("Time: %s | Brightness: %.1f | Ambient: %s", 
+        Lighting.TimeOfDay, Lighting.Brightness, tostring(Lighting.Ambient))
+    Copy(info)
+    Notify("Lighting", "Data copied", 3, "sun")
+end})
+
+MapTab:Button({Title = "Count Map Objects", Icon = "box", Callback = function()
+    local counts = CountObjects()
+    local info = string.format("Parts: %d | Models: %d | Scripts: %d", counts.parts, counts.models, counts.scripts)
+    Copy(info)
+    Notify("Objects", info, 4, "box")
+end})
+
+MapTab:Button({Title = "Find All NPCs", Icon = "bot", Callback = function()
+    local npcs = {}
+    for _, model in ipairs(Workspace:GetDescendants()) do
+        if model:IsA("Model") and model:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(model) then
+            table.insert(npcs, model.Name)
+        end
+    end
+    if #npcs > 0 then
+        Copy(table.concat(npcs, ", "))
+        Notify("NPCs", "Found " .. #npcs .. " NPCs", 3, "bot")
+    else
+        Notify("NPCs", "None found", 3, "bot")
+    end
+end})
+
+SystemTab:Button({Title = "Network Info", Icon = "wifi", Callback = function()
+    local net = GetNetworkInfo()
+    local info = string.format("Ping: %dms | Region: %s", net.ping, net.region)
+    Copy(info)
+    Notify("Network", info, 3, "wifi")
+end})
+
+SystemTab:Button({Title = "System Stats", Icon = "activity", Callback = function()
+    local stats = GetSystemStats()
+    local info = string.format("Memory: %dMB | FPS: %d | Recv: %dKbps | Send: %dKbps", 
+        stats.memory, stats.fps, stats.dataRecv, stats.dataSent)
+    Copy(info)
+    Notify("System", info, 4, "activity")
+end})
+
+SystemTab:Button({Title = "Export All Data", Icon = "download", Callback = function()
+    local sys = GetSystemStats()
+    local net = GetNetworkInfo()
+    local data = string.format([[
+Game: %s
+Game ID: %s | Place ID: %s
+Job ID: %s
+Players: %d/%d
+Position: %s
+Ping: %dms | Region: %s
+Memory: %dMB | FPS: %d
+Time: %s
+]], GameInfo.Name, GameInfo.GameId, GameInfo.PlaceId, GameInfo.JobId, 
+    GetPlayerData().count, GetPlayerData().max, GetPosition(), 
+    net.ping, net.region, sys.memory, sys.fps, Lighting.TimeOfDay)
+    Copy(data)
+    Notify("Export", "All data exported", 4, "download")
+end})
+
+UtilityTab:Button({Title = "Reset Character", Icon = "rotate-ccw", Callback = function()
+    if char then char:BreakJoints() end
+end})
+
+UtilityTab:Button({Title = "Clear Chat", Icon = "message-square", Callback = function()
+    SendChat(string.rep("\n", 100))
+    Notify("Chat", "Cleared", 2, "message-square")
+end})
+
+UtilityTab:Button({Title = "Get Coordinates Link", Icon = "link", Callback = function()
+    local pos = GetPosition()
+    local link = string.format("https://www.roblox.com/games/%s?privateServerLinkCode=%s", 
+        GameInfo.PlaceId, GameInfo.JobId)
+    Copy(link)
+    Notify("Link", "Join link copied", 3, "link")
+end})
+
+UtilityTab:Button({Title = "Toggle Fullscreen", Icon = "maximize", Callback = function()
+    game:GetService("GuiService"):ToggleFullscreen()
+end})
+
+local autoUpdateEnabled = false
+UtilityTab:Toggle({
+    Title = "Auto-Update Stats",
+    Default = false,
+    Callback = function(v)
+        autoUpdateEnabled = v
+        if v then
+            Notify("Auto-Update", "Enabled", 2, "refresh-cw")
+            spawn(function()
+                while autoUpdateEnabled do
+                    UpdateFPS()
+                    wait(5)
+                end
+            end)
         end
     end
 })
 
--- =========================
--- Map Tab
--- =========================
-MapTab:Button({
-    Title = "Get Spawn Locations",
-    Icon = "flag",
-    Callback = function()
-        local spawns = GetSpawnLocations()
-        if #spawns > 0 then
-            local spawnText = {}
-            for _, spawn in pairs(spawns) do
-                table.insert(spawnText, spawn.name .. " (" .. tostring(spawn.position) .. ")")
-            end
-            local spawnString = table.concat(spawnText, "\n")
-            CopyToClipboard(spawnString)
-            Notify("Spawn Locations", "Found " .. #spawns .. " spawn points", 3, "flag")
-        else
-            Notify("Spawn Locations", "No spawn locations found", 3, "flag")
-        end
-    end
-})
+UpdatePlayerCache()
 
-MapTab:Button({
-    Title = "Get Lighting Info",
-    Icon = "sun",
-    Callback = function()
-        local lightingInfo = string.format(
-            "Time: %s, Brightness: %.2f, Ambient: %s, ColorShift: %s",
-            Lighting.TimeOfDay,
-            Lighting.Brightness,
-            tostring(Lighting.Ambient),
-            tostring(Lighting.ColorShift_Top)
-        )
-        CopyToClipboard(lightingInfo)
-        Notify("Lighting Info", "Lighting data copied", 3, "sun")
-    end
-})
-
-MapTab:Button({
-    Title = "Count Map Objects",
-    Icon = "box",
-    Callback = function()
-        local partCount = 0
-        local modelCount = 0
-        local scriptCount = 0
-        
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                partCount = partCount + 1
-            elseif obj:IsA("Model") then
-                modelCount = modelCount + 1
-            elseif obj:IsA("BaseScript") then
-                scriptCount = scriptCount + 1
-            end
-        end
-        
-        local objectInfo = string.format("Parts: %d, Models: %d, Scripts: %d", partCount, modelCount, scriptCount)
-        CopyToClipboard(objectInfo)
-        Notify("Object Count", objectInfo, 4, "box")
-    end
-})
-
--- =========================
--- System Tab
--- =========================
-SystemTab:Button({
-    Title = "Get Network Info",
-    Icon = "wifi",
-    Callback = function()
-        local networkInfo = string.format("Ping: %s, Region: %s", GetPing(), GetServerRegion())
-        CopyToClipboard(networkInfo)
-        Notify("Network Info", networkInfo, 3, "wifi")
-    end
-})
-
-SystemTab:Button({
-    Title = "Get System Stats",
-    Icon = "activity",
-    Callback = function()
-        local stats = game:GetService("Stats")
-        local memory = math.floor(stats:GetTotalMemoryUsageMb())
-        local systemInfo = string.format("Memory Usage: %d MB, FPS: %d", memory, GetFPS())
-        CopyToClipboard(systemInfo)
-        Notify("System Stats", systemInfo, 3, "activity")
-    end
-})
-
-SystemTab:Button({
-    Title = "Export All Info",
-    Icon = "download",
-    Callback = function()
-        local allInfo = {
-            ["Game Name"] = GameName,
-            ["Game ID"] = GameId,
-            ["Place ID"] = PlaceId,
-            ["Job ID"] = JobId,
-            ["Player Count"] = GetPlayerCount() .. "/" .. GetMaxPlayers(),
-            ["Current Position"] = GetCurrentPosition(),
-            ["Network Ping"] = GetPing(),
-            ["Server Region"] = GetServerRegion(),
-            ["Time of Day"] = Lighting.TimeOfDay,
-            ["Memory Usage"] = math.floor(game:GetService("Stats"):GetTotalMemoryUsageMb()) .. " MB"
-        }
-        
-        local infoString = ""
-        for key, value in pairs(allInfo) do
-            infoString = infoString .. key .. ": " .. value .. "\n"
-        end
-        
-        CopyToClipboard(infoString)
-        Notify("Export Complete", "All information exported to clipboard", 4, "download")
-    end
-})
-
--- =========================
--- Auto-refresh player list
--- =========================
-Players.PlayerAdded:Connect(function(newPlayer)
-    Notify("Player Joined", newPlayer.Name .. " joined the server", 2, "user-plus")
+Players.PlayerAdded:Connect(function(p)
+    table.insert(PlayerCache, p.Name)
+    Notify("Player Joined", p.Name, 2, "user-plus")
 end)
 
-Players.PlayerRemoving:Connect(function(leftPlayer)
-    Notify("Player Left", leftPlayer.Name .. " left the server", 2, "user-minus")
+Players.PlayerRemoving:Connect(function(p)
+    for i, name in ipairs(PlayerCache) do
+        if name == p.Name then
+            table.remove(PlayerCache, i)
+            break
+        end
+    end
+    Notify("Player Left", p.Name, 2, "user-minus")
 end)
 
--- =========================
--- Initial notification
--- =========================
-Notify("MangoHub Loaded", "Welcome to " .. GameName, 3, "zap")
+Notify("MangoHub", "Loaded successfully!", 3, "zap")
