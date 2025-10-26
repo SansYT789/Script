@@ -1,5 +1,6 @@
 if getgenv().AuraFarmEnabled then
-loadstring(game:HttpGet("https://raw.githubusercontent.com/SansYT789/Library/refs/heads/main/auto-move-afk.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/SansYT789/Library/refs/heads/main/AuraFarming.lua"))()
+return
 end
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
