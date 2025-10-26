@@ -1,6 +1,6 @@
 if getgenv().AuraFarmEnabled then
-loadstring(game:HttpGet("https://raw.githubusercontent.com/SansYT789/Library/refs/heads/main/AuraFarming.lua"))()
-return
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/SansYT789/Library/refs/heads/main/AuraFarming.lua"))()
+    return
 end
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
@@ -97,7 +97,7 @@ local function getFPS()
 end
 
 local function updatePlayerCache()
-    table.clear(cache.players)
+    cache.players = {}
     for _, p in ipairs(Players:GetPlayers()) do
         cache.players[#cache.players + 1] = p.Name
     end
